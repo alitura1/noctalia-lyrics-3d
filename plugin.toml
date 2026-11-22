@@ -1,0 +1,471 @@
+# plugin.toml — Noctalia v5 plugin manifest
+# 3D desktop lyrics for Noctalia v5 (Luau host + Quickshell renderer bridge).
+
+id = "alitura/noctalia-lyrics-3d"
+name = "Noctalia Lyrics 3D"
+version = "2.3.0"
+plugin_api = 51
+author = "alitura"
+license = "MIT"
+icon = "music"
+description = "Desktop lyrics with real 3D perspective, wallpaper-aware colours, an LRCLIB cache and Hyprland window rules."
+tags = ["desktop", "lyrics", "music", "hyprland", "layer"]
+dependencies = ["quickshell", "hyprctl", "playerctl", "curl"]
+
+# ── Shared plugin settings (Settings → Plugins → gear) ──────────────────────
+
+[[setting]]
+key = "enabled"
+type = "bool"
+label_key = "settings.enabled.label"
+description_key = "settings.enabled.description"
+default = true
+
+[[setting]]
+key = "font_size"
+type = "int"
+label_key = "settings.font_size.label"
+description_key = "settings.font_size.description"
+default = 38
+min = 12
+max = 96
+
+[[setting]]
+key = "font_family"
+type = "string"
+label_key = "settings.font_family.label"
+description_key = "settings.font_family.description"
+default = ""
+
+[[setting]]
+key = "font_weight"
+type = "int"
+label_key = "settings.font_weight.label"
+description_key = "settings.font_weight.description"
+default = 600
+min = 100
+max = 900
+step = 50
+
+[[setting]]
+key = "line_spacing"
+type = "int"
+label_key = "settings.line_spacing.label"
+description_key = "settings.line_spacing.description"
+default = 12
+min = 0
+max = 40
+
+[[setting]]
+key = "max_lines"
+type = "int"
+label_key = "settings.max_lines.label"
+description_key = "settings.max_lines.description"
+default = 9
+min = 3
+max = 15
+
+[[setting]]
+key = "width_percent"
+type = "double"
+label_key = "settings.width_percent.label"
+description_key = "settings.width_percent.description"
+default = 0.62
+min = 0.3
+max = 0.95
+step = 0.01
+
+[[setting]]
+key = "angle_x"
+type = "double"
+label_key = "settings.angle_x.label"
+description_key = "settings.angle_x.description"
+default = 0.0
+min = -60.0
+max = 60.0
+step = 0.5
+
+[[setting]]
+key = "angle_y"
+type = "double"
+label_key = "settings.angle_y.label"
+description_key = "settings.angle_y.description"
+default = 0.0
+min = -60.0
+max = 60.0
+step = 0.5
+
+[[setting]]
+key = "angle_z"
+type = "double"
+label_key = "settings.angle_z.label"
+description_key = "settings.angle_z.description"
+default = 0.0
+min = -60.0
+max = 60.0
+step = 0.5
+
+[[setting]]
+key = "scene_scale"
+type = "double"
+label_key = "settings.scene_scale.label"
+description_key = "settings.scene_scale.description"
+default = 1.0
+min = 0.5
+max = 1.8
+step = 0.01
+
+[[setting]]
+key = "offset_x"
+type = "int"
+label_key = "settings.offset_x.label"
+description_key = "settings.offset_x.description"
+default = 0
+min = -800
+max = 800
+
+[[setting]]
+key = "offset_y"
+type = "int"
+label_key = "settings.offset_y.label"
+description_key = "settings.offset_y.description"
+default = 0
+min = -800
+max = 800
+
+[[setting]]
+key = "dynamic_placement"
+type = "bool"
+label_key = "settings.dynamic_placement.label"
+description_key = "settings.dynamic_placement.description"
+default = true
+
+[[setting]]
+key = "center_safe_zone"
+type = "int"
+label_key = "settings.center_safe_zone.label"
+description_key = "settings.center_safe_zone.description"
+default = 32
+min = 0
+max = 60
+
+[[setting]]
+key = "display_mode"
+type = "select"
+label_key = "settings.display_mode.label"
+description_key = "settings.display_mode.description"
+default = "auto"
+options = [
+  { value = "auto", label_key = "settings.display_mode.auto" },
+  { value = "kinetic", label_key = "settings.display_mode.kinetic" },
+  { value = "lineByLine", label_key = "settings.display_mode.line_by_line" },
+  { value = "singleFocus", label_key = "settings.display_mode.single_focus" },
+]
+
+[[setting]]
+key = "position_preset"
+type = "select"
+label_key = "settings.position_preset.label"
+description_key = "settings.position_preset.description"
+default = "custom"
+options = [
+  { value = "topCenter", label_key = "settings.position_preset.top_center" },
+  { value = "leftCenter", label_key = "settings.position_preset.left_center" },
+  { value = "rightCenter", label_key = "settings.position_preset.right_center" },
+  { value = "bottomCenter", label_key = "settings.position_preset.bottom_center" },
+  { value = "custom", label_key = "settings.position_preset.custom" },
+]
+
+[[setting]]
+key = "position_x"
+type = "double"
+label_key = "settings.position_x.label"
+description_key = "settings.position_x.description"
+default = 50.0
+min = 0.0
+max = 100.0
+step = 0.5
+
+[[setting]]
+key = "position_y"
+type = "double"
+label_key = "settings.position_y.label"
+description_key = "settings.position_y.description"
+default = 78.0
+min = 0.0
+max = 100.0
+step = 0.5
+
+[[setting]]
+key = "show_now_playing"
+type = "bool"
+label_key = "settings.show_now_playing.label"
+description_key = "settings.show_now_playing.description"
+default = false
+
+[[setting]]
+key = "show_next_line"
+type = "bool"
+label_key = "settings.show_next_line.label"
+description_key = "settings.show_next_line.description"
+default = false
+
+[[setting]]
+key = "now_playing_position"
+type = "select"
+label_key = "settings.now_playing_position.label"
+description_key = "settings.now_playing_position.description"
+default = "topCenter"
+options = [
+  { value = "topCenter", label_key = "settings.now_playing_position.top_center" },
+  { value = "topLeft", label_key = "settings.now_playing_position.top_left" },
+  { value = "topRight", label_key = "settings.now_playing_position.top_right" },
+]
+
+[[setting]]
+key = "typography_style"
+type = "select"
+label_key = "settings.typography_style.label"
+description_key = "settings.typography_style.description"
+default = "modern"
+options = [
+  { value = "modern", label_key = "settings.typography_style.modern" },
+  { value = "script", label_key = "settings.typography_style.script" },
+  { value = "pixel", label_key = "settings.typography_style.pixel" },
+]
+
+[[setting]]
+key = "typography_max_width"
+type = "int"
+label_key = "settings.typography_max_width.label"
+description_key = "settings.typography_max_width.description"
+default = 480
+min = 420
+max = 520
+step = 5
+
+[[setting]]
+key = "depth_scale"
+type = "double"
+label_key = "settings.depth_scale.label"
+description_key = "settings.depth_scale.description"
+default = 0.92
+min = 0.6
+max = 1.0
+step = 0.01
+
+[[setting]]
+key = "blur_amount"
+type = "double"
+label_key = "settings.blur_amount.label"
+description_key = "settings.blur_amount.description"
+default = 0.45
+min = 0.0
+max = 1.0
+step = 0.01
+
+[[setting]]
+key = "active_glow"
+type = "double"
+label_key = "settings.active_glow.label"
+description_key = "settings.active_glow.description"
+default = 0.55
+min = 0.0
+max = 1.0
+step = 0.01
+
+[[setting]]
+key = "parallax"
+type = "bool"
+label_key = "settings.parallax.label"
+description_key = "settings.parallax.description"
+default = false
+
+[[setting]]
+key = "parallax_strength"
+type = "double"
+label_key = "settings.parallax_strength.label"
+description_key = "settings.parallax_strength.description"
+default = 1.2
+min = 0.0
+max = 3.0
+step = 0.1
+
+[[setting]]
+key = "sync_offset"
+type = "int"
+label_key = "settings.sync_offset.label"
+description_key = "settings.sync_offset.description"
+default = 0
+min = -500
+max = 500
+
+[[setting]]
+key = "filter_mode"
+type = "select"
+label_key = "settings.filter_mode.label"
+description_key = "settings.filter_mode.description"
+default = "allowAll"
+options = [
+  { value = "allowAll", label_key = "settings.filter_mode.allow_all" },
+  { value = "whitelist", label_key = "settings.filter_mode.whitelist" },
+]
+
+[[setting]]
+key = "disabled_domains"
+type = "string_list"
+label_key = "settings.disabled_domains.label"
+description_key = "settings.disabled_domains.description"
+default = []
+
+[[setting]]
+key = "custom_domains"
+type = "string_list"
+label_key = "settings.custom_domains.label"
+description_key = "settings.custom_domains.description"
+default = []
+
+[[setting]]
+key = "disabled_players"
+type = "string_list"
+label_key = "settings.disabled_players.label"
+description_key = "settings.disabled_players.description"
+default = []
+
+[[setting]]
+key = "allowed_windows"
+type = "string_list"
+label_key = "settings.allowed_windows.label"
+description_key = "settings.allowed_windows.description"
+default = []
+
+[[setting]]
+key = "visibility_mode"
+type = "select"
+label_key = "settings.visibility_mode.label"
+description_key = "settings.visibility_mode.description"
+default = "desktop"
+options = [
+  { value = "desktop", label_key = "settings.visibility_mode.desktop" },
+  { value = "allowlist", label_key = "settings.visibility_mode.allowlist" },
+  { value = "always", label_key = "settings.visibility_mode.always" },
+]
+
+[[setting]]
+key = "hide_on_fullscreen"
+type = "bool"
+label_key = "settings.hide_on_fullscreen.label"
+description_key = "settings.hide_on_fullscreen.description"
+default = true
+
+[[setting]]
+key = "hide_when_paused"
+type = "bool"
+label_key = "settings.hide_when_paused.label"
+description_key = "settings.hide_when_paused.description"
+default = false
+
+[[setting]]
+key = "monitor_scope"
+type = "select"
+label_key = "settings.monitor_scope.label"
+description_key = "settings.monitor_scope.description"
+default = "focused"
+options = [
+  { value = "focused", label_key = "settings.monitor_scope.focused" },
+  { value = "all", label_key = "settings.monitor_scope.all" },
+]
+
+[[setting]]
+key = "theme_mode"
+type = "select"
+label_key = "settings.theme_mode.label"
+description_key = "settings.theme_mode.description"
+default = "auto"
+options = [
+  { value = "auto", label_key = "settings.theme_mode.auto" },
+  { value = "wallpaper", label_key = "settings.theme_mode.wallpaper" },
+  { value = "custom", label_key = "settings.theme_mode.custom" },
+]
+
+[[setting]]
+key = "accent_blend"
+type = "double"
+label_key = "settings.accent_blend.label"
+description_key = "settings.accent_blend.description"
+default = 0.65
+min = 0.0
+max = 1.0
+step = 0.01
+
+[[setting]]
+key = "custom_text_color"
+type = "color"
+label_key = "settings.custom_text_color.label"
+description_key = "settings.custom_text_color.description"
+default = "#f6f8ff"
+
+[[setting]]
+key = "custom_accent_color"
+type = "color"
+label_key = "settings.custom_accent_color.label"
+description_key = "settings.custom_accent_color.description"
+default = "#8ab4f8"
+
+[[setting]]
+key = "text_scrim"
+type = "double"
+label_key = "settings.text_scrim.label"
+description_key = "settings.text_scrim.description"
+default = 0.0
+min = 0.0
+max = 0.8
+step = 0.01
+
+[[setting]]
+key = "wallpaper_path_override"
+type = "file"
+label_key = "settings.wallpaper_path_override.label"
+description_key = "settings.wallpaper_path_override.description"
+default = ""
+
+[[setting]]
+key = "show_plain_lyrics"
+type = "bool"
+label_key = "settings.show_plain_lyrics.label"
+description_key = "settings.show_plain_lyrics.description"
+default = true
+
+[[setting]]
+key = "cache_enabled"
+type = "bool"
+label_key = "settings.cache_enabled.label"
+description_key = "settings.cache_enabled.description"
+default = true
+
+[[setting]]
+key = "save_perspectives"
+type = "bool"
+label_key = "settings.save_perspectives.label"
+description_key = "settings.save_perspectives.description"
+default = true
+
+# ── Entries ─────────────────────────────────────────────────────────────────
+
+[[service]]
+id = "service"
+entry = "service.luau"
+
+[[panel]]
+id = "controls"
+entry = "controls.luau"
+width = 480
+height = 760
+placement = "floating"
+position = "center"
+layer = "overlay"
+keyboard_focus = "on_demand"
+
+[[shortcut]]
+id = "lyrics-toggle"
+entry = "shortcut.luau"

@@ -1,0 +1,60 @@
+{
+  "id": "noctalia-lyrics-3d",
+  "name": "Noctalia Lyrics 3D",
+  "version": "1.0.0",
+  "minNoctaliaVersion": "4.0.0",
+  "author": "alitura",
+  "license": "MIT",
+  "repository": "https://github.com/alitura/noctalia-lyrics-3d",
+  "description": "Desktop lyrics for Noctalia Shell with real 3D perspective, wallpaper-aware colours, album-art accents and Hyprland window visibility rules.",
+  "tags": ["Desktop", "Music", "Lyrics", "Hyprland"],
+  "entryPoints": {
+    "main": "Main.qml",
+    "settings": "Settings.qml"
+  },
+  "dependencies": {
+    "plugins": []
+  },
+  "metadata": {
+    "commandPrefix": "lyrics3d",
+    "defaultSettings": {
+      "enabled": true,
+      "fontFamily": "",
+      "fontSize": 38,
+      "fontWeight": 600,
+      "lineSpacing": 12,
+      "maxLines": 9,
+      "widthPercent": 0.62,
+      "offsetX": 0,
+      "offsetY": 0,
+      "angleX": 0,
+      "angleY": 0,
+      "angleZ": 0,
+      "scale": 1.0,
+      "depthScale": 0.92,
+      "blurAmount": 0.45,
+      "activeGlow": 0.55,
+      "parallax": false,
+      "parallaxStrength": 1.2,
+      "syncOffset": 0,
+      "filterMode": "allowAll",
+      "disabledDomains": [],
+      "customDomains": [],
+      "disabledPlayers": [],
+      "allowedWindows": [],
+      "visibilityMode": "desktop",
+      "hideOnFullscreen": true,
+      "hideWhenPaused": false,
+      "monitorScope": "focused",
+      "themeMode": "auto",
+      "accentBlend": 0.65,
+      "customTextColor": "#f6f8ff",
+      "customAccentColor": "#8ab4f8",
+      "textScrim": 0.0,
+      "wallpaperPathOverride": "",
+      "showPlainLyrics": true,
+      "cacheEnabled": true,
+      "savePerspectivePerWallpaper": true
+    }
+  }
+}

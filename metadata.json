@@ -1,0 +1,50 @@
+{
+  "id": "noctalia-lyrics-3d",
+  "name": "Noctalia Lyrics 3D",
+  "version": "2.3.0",
+  "description": "Cinematic desktop lyrics for Noctalia Shell with dynamic safe-zone placement, four display modes, packed variable-scale typography, neon glow and an interactive compact now-playing card.",
+  "author": "alitura",
+  "license": "MIT",
+  "repository": "https://github.com/alitura/noctalia-lyrics-3d",
+  "homepage": "https://github.com/alitura/noctalia-lyrics-3d#readme",
+  "keywords": [
+    "noctalia",
+    "noctalia-v5",
+    "luau",
+    "quickshell",
+    "qml",
+    "lyrics",
+    "lrclib",
+    "hyprland",
+    "wayland",
+    "mpris",
+    "desktop-widget"
+  ],
+  "compatibility": {
+    "shell": "Noctalia Shell v5 Luau plugin host + Quickshell companion",
+    "noctalia": ">=5.0.0 (plugin_api 51)",
+    "quickshell": ">=0.3.0",
+    "qt": ">=6.5",
+    "compositor": "Hyprland >= 0.40 on Wayland",
+    "runtime": [
+      "curl (LRCLIB / remote album art)",
+      "playerctl (source list)",
+      "hyprctl (window visibility rules)"
+    ]
+  },
+  "entries": {
+    "manifest": "plugin.toml",
+    "service": "service.luau",
+    "panel": "controls.luau",
+    "shortcut": "shortcut.luau",
+    "renderer": "ui/Renderer.qml"
+  },
+  "permissions": [
+    "network:lrclib.net",
+    "process:hyprctl",
+    "process:playerctl",
+    "process:curl",
+    "filesystem:~/.cache/noctalia-lyrics"
+  ],
+  "notes": "Noctalia v5 does not load QML plugins. The Luau service owns MPRIS, LRCLIB, filters and settings; a separate Quickshell process renders the real 3D layer and reads ~/.cache/noctalia-lyrics/state.json. The old Noctalia v4 QML plugin is archived under legacy-v4/."
+}

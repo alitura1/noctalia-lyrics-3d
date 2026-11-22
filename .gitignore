@@ -1,0 +1,21 @@
+# Noctalia writes user settings next to the plugin; never commit them.
+settings.json
+
+# Runtime output, logs and temporary artefacts
+*.log
+*.tmp
+*.temp
+*.swp
+*.pid
+.smoke/
+.smoke-cache/
+cache/
+tmp/
+scratch/
+
+# Editor / OS noise
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*~
