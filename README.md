@@ -27,7 +27,7 @@ Translation files are plain flat JSON keyed by the `label_key` / `description_ke
 
 - **Real 3D scene:** independent X/Y/Z rotation, scale, position and true perspective.
 - **Kinetic typography block:** a packed, multi-line poster block 420–520 px wide instead of a karaoke list. Short connectives stay small; long key words are clearly larger and heavier.
-- **Word-by-word reveal:** the active line is split into words; each word grows with an `OutBack` easing, brightens and lights up with neon glow as it is sung. Unsung words stay small, dim and slightly blurred.
+- **Word-by-word reveal:** the active line is split into words; each word grows with a 140 ms `OutCubic` easing and brightens as it is sung. Contours come from the built-in text outline and a single shared glow layer covers the line, so the scene keeps 60 FPS. Unsung words stay small and dim.
 - **Contrast protection:** the active word core is forced to at least **4.5:1** contrast against the wallpaper average, with a cream/white core and album-art outer glow when needed.
 - **Typography styles:** Modern Display, Script / Brush and Pixel / Retro; each changes family, weight, italics, letter spacing and capitalisation together.
 - **Compact now-playing card (off by default):** 36 px cover, title, artist, live progress bar and elapsed/total time; the card sizes itself between 214 and 320 px. Enable `show_now_playing` to show it — the desktop stays lyric-only out of the box.
@@ -36,6 +36,8 @@ Translation files are plain flat JSON keyed by the `label_key` / `description_ke
 - **Four display modes:** `auto`, `kinetic`, `lineByLine` and `singleFocus`; Auto picks a mode from line length and timing.
 - **Quick card controls:** hover or click the now-playing card to reveal Mode / Layout / Settings buttons.
 - **Wallpaper-aware calibration:** live 3D grid, drag to move, X/Y/Z and scale sliders, saved per wallpaper in `perspectives.json`.
+- **Event-driven playhead:** MPRIS position is read only on track changes, play/pause, seeks and a 2 s drift sync; the renderer dead-reckons the playhead from a 60 Hz local clock, so lines never trail the music.
+- **Instant lyrics lookup:** an in-memory cache index resolves a track with one lookup, and `/api/get` plus `/api/search` run in parallel with a 2.5 s budget, so even a cold track is ready in a few hundred milliseconds.
 - **Optional mouse parallax**, **universal MPRIS** support, **LRCLIB** with `/api/get` then `/api/search`, millisecond LRC parsing, plain-lyrics and instrumental fallbacks, and a **local cache** in `~/.cache/noctalia-lyrics/`.
 - **Hyprland visibility rules:** `bottom` on the desktop, `overlay` for allowlisted windows or always-on, fully click-through.
 
@@ -100,7 +102,7 @@ Every setting is also available through `noctalia msg config-set`; the table lis
 | `disabled_domains` / `custom_domains` | empty | Domain deny list and extra allowed sources |
 | `disabled_players` / `allowed_windows` | empty | MPRIS identities and window classes |
 | `visibility_mode` | `desktop` | `desktop`, `allowlist` or `always` |
-| `hide_on_fullscreen` / `hide_when_paused` | `true` / `false` | Extra hiding rules |
+| `hide_on_fullscreen` / `hide_on_pause` | `true` / `true` | Extra hiding rules |
 | `monitor_scope` | `focused` | `focused` or `all` |
 | `theme_mode` / `accent_blend` | `auto` / `0.65` | Colour source and accent mix |
 | `custom_text_color` / `custom_accent_color` | `#f6f8ff` / `#8ab4f8` | Palette used in custom mode |
@@ -124,7 +126,7 @@ Saved perspectives are applied automatically when the wallpaper changes.
 | `allowlist` | `overlay` in allowed windows, `bottom` on the desktop | Only while an `allowed_windows` match is focused, or on the desktop |
 | `always` | `overlay` | Always |
 
-`hide_on_fullscreen` and `hide_when_paused` add further conditions; `monitor_scope` limits drawing to the focused output or all outputs.
+`hide_on_fullscreen` and `hide_on_pause` add further conditions; `monitor_scope` limits drawing to the focused output or all outputs. `hide_on_pause` waits 1.5 s, then fades the overlay out over 300 ms and restores it in 180 ms as soon as playback resumes.
 
 ### Source and domain filter
 
@@ -152,6 +154,7 @@ The built-in v5 `ui.*` tree only offers 2D affine transforms, so the architectur
 | Path | Content |
 |---|---|
 | `~/.cache/noctalia-lyrics/state.json` | Live state published by the service |
+| `~/.cache/noctalia-lyrics/index.json` | In-memory cache index (track key → cached file) |
 | `~/.cache/noctalia-lyrics/control.json` | UI → service command queue |
 | `~/.cache/noctalia-lyrics/perspectives.json` | Per-wallpaper X/Y/Z, scale and position |
 | `~/.cache/noctalia-lyrics/renderer.log` | Quickshell output |
@@ -207,7 +210,9 @@ Ayar etiketleri ve açıklamaları aşağıdaki tüm dillerde çevrilmiştir. No
 
 - **Gerçek 3D sahne:** X/Y/Z eksenlerinde bağımsız döndürme, ölçek, konum ve gerçek perspektif.
 - **Kinetik tipografi bloğu:** Kalabalık karaoke listesi yerine 420–520 px genişliğinde, çok satırlı ve sıkı yerleşimli bir poster bloğu. Kısa bağlaç/ekler küçük, uzun ana kelimeler belirgin biçimde büyük ve kalın render edilir.
-- **Kelime kelime canlanma:** Aktif satır kelimelere bölünür; her kelime sırası geldiğinde `OutBack` yumuşatmasıyla büyür, parlaklığı artar ve neon ışımayla canlanır. Söylenmemiş kelimeler küçük, sönük ve hafif bulanıktır.
+- **Kelime kelime canlanma:** Aktif satır kelimelere bölünür; her kelime sırası geldiğinde 140 ms `OutCubic` yumuşatmasıyla büyür ve parlaklığı artar. Konturlar yerleşik metin çizgisinden gelir; satırın tamamı tek bir ışıma katmanıyla çizildiği için sahne 60 FPS’de kalır. Söylenmemiş kelimeler küçük ve sönüktür.
+- **Olay tabanlı oynatma konumu:** MPRIS konumu yalnızca parça değişiminde, duraklat/oynat’ta, sarımlarda ve 2 s’lik sapma senkronunda okunur; oynatma konumu 60 Hz yerel saatle ileri hesaplanır, böylece sözler müziğin gerisinde kalmaz.
+- **Anında söz bulma:** Bellek içi önbellek indeksi parçayı tek aramada çözer; `/api/get` ve `/api/search` 2,5 s bütçeyle paralel çalışır, önbellekte olmayan parça bile birkaç yüz milisaniyede hazır olur.
 - **Kontrast koruması:** Aktif kelime çekirdeği duvar kağıdı ortalamasına karşı en az **4.5:1** kontrasta zorlanır; düşük kontrastta krem/beyaz çekirdek ve albüm kapağı renginde dış ışıma kullanılır.
 - **Tipografi stilleri:** Modern Display, Script / Brush ve Pixel / Retro arasında geçiş. Stil; font ailesi, ağırlık, italik, harf aralığı ve büyük harf davranışını birlikte değiştirir.
 - **Kompakt now playing kartı (varsayılan kapalı):** 36 px kapak, şarkı adı, sanatçı, canlı ilerleme çubuğu ve geçen/toplam süre; içeriğe göre 214–320 px arasında boyutlanır. Göstermek için `show_now_playing` ayarını açın — masaüstü varsayılan olarak yalnızca sözleri gösterir.
@@ -282,7 +287,7 @@ Tüm ayarlar `noctalia msg config-set` ile de yazılabilir; tablo v2.3.0 varsay�
 | `disabled_domains` / `custom_domains` | boş | Alan adı engel listesi ve ek izinli kaynaklar |
 | `disabled_players` / `allowed_windows` | boş | MPRIS kimlikleri ve pencere sınıfları |
 | `visibility_mode` | `desktop` | `desktop`, `allowlist` veya `always` |
-| `hide_on_fullscreen` / `hide_when_paused` | `true` / `false` | Ek gizleme kuralları |
+| `hide_on_fullscreen` / `hide_on_pause` | `true` / `true` | Ek gizleme kuralları |
 | `monitor_scope` | `focused` | `focused` veya `all` |
 | `theme_mode` / `accent_blend` | `auto` / `0.65` | Renk kaynağı ve vurgu karışımı |
 | `custom_text_color` / `custom_accent_color` | `#f6f8ff` / `#8ab4f8` | Özel modda kullanılan palet |
@@ -306,7 +311,7 @@ Duvar kağıdı değiştiğinde kayıtlı perspektif otomatik uygulanır.
 | `allowlist` | İzinli pencerede `overlay`, masaüstünde `bottom` | Yalnızca `allowed_windows` eşleşen pencere odaktayken veya masaüstünde |
 | `always` | `overlay` | Her zaman |
 
-`hide_on_fullscreen` ve `hide_when_paused` ek koşullar ekler; `monitor_scope` yalnızca odaklı çıkışta veya tüm çıkışlarda çizer.
+`hide_on_fullscreen` ve `hide_on_pause` ek koşullar ekler; `monitor_scope` yalnızca odaklı çıkışta veya tüm çıkışlarda çizer. `hide_on_pause` 1,5 s bekler, katmanı 300 ms’de soldurur ve oynatma dönünce 180 ms’de geri getirir.
 
 ### Kaynak ve alan adı filtresi
 
@@ -334,6 +339,7 @@ Noctalia v5’in yerleşik `ui.*` ağacı yalnızca 2D affine dönüşümler sun
 | Yol | İçerik |
 |---|---|
 | `~/.cache/noctalia-lyrics/state.json` | Servisin yayınladığı canlı durum |
+| `~/.cache/noctalia-lyrics/index.json` | Bellek içi önbellek indeksi (parça anahtarı → dosya) |
 | `~/.cache/noctalia-lyrics/control.json` | UI → servis komut kuyruğu |
 | `~/.cache/noctalia-lyrics/perspectives.json` | Duvar kağıdı başına X/Y/Z, ölçek ve konum |
 | `~/.cache/noctalia-lyrics/renderer.log` | Quickshell çıktısı |

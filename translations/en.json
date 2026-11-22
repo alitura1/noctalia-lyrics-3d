@@ -93,8 +93,6 @@
   "settings.visibility_mode.always": "Always",
   "settings.hide_on_fullscreen.label": "Hide on fullscreen",
   "settings.hide_on_fullscreen.description": "Hide lyrics when a window is fullscreen.",
-  "settings.hide_when_paused.label": "Hide when paused",
-  "settings.hide_when_paused.description": "Hide the layer while playback is paused.",
   "settings.monitor_scope.label": "Monitors",
   "settings.monitor_scope.description": "Draw on the focused output only, or on every output.",
   "settings.monitor_scope.focused": "Focused",
@@ -119,5 +117,7 @@
   "settings.cache_enabled.label": "Cache lyrics",
   "settings.cache_enabled.description": "Store LRCLIB responses in ~/.cache/noctalia-lyrics.",
   "settings.save_perspectives.label": "Save per-wallpaper perspective",
-  "settings.save_perspectives.description": "Remember X/Y/Z angles for each wallpaper in perspectives.json."
+  "settings.save_perspectives.description": "Remember X/Y/Z angles for each wallpaper in perspectives.json.",
+  "settings.hide_on_pause.label": "Hide on pause",
+  "settings.hide_on_pause.description": "Fade the lyrics out 1.5 s after playback pauses and bring them back the moment it resumes."
 }

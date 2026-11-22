@@ -93,8 +93,6 @@
   "settings.visibility_mode.always": "Всегда",
   "settings.hide_on_fullscreen.label": "Скрывать в полноэкранном режиме",
   "settings.hide_on_fullscreen.description": "Скрывает текст, когда окно открыто на весь экран.",
-  "settings.hide_when_paused.label": "Скрывать на паузе",
-  "settings.hide_when_paused.description": "Скрывает слой, пока воспроизведение приостановлено.",
   "settings.monitor_scope.label": "Мониторы",
   "settings.monitor_scope.description": "Рисовать только на активном выходе или на всех выходах.",
   "settings.monitor_scope.focused": "Активный",
@@ -119,5 +117,7 @@
   "settings.cache_enabled.label": "Кэшировать текст",
   "settings.cache_enabled.description": "Сохранять ответы LRCLIB в ~/.cache/noctalia-lyrics.",
   "settings.save_perspectives.label": "Сохранять перспективу для обоев",
-  "settings.save_perspectives.description": "Запоминать углы X/Y/Z для каждых обоев в perspectives.json."
+  "settings.save_perspectives.description": "Запоминать углы X/Y/Z для каждых обоев в perspectives.json.",
+  "settings.hide_on_pause.label": "Скрывать на паузе",
+  "settings.hide_on_pause.description": "Скрывает слой, пока воспроизведение приостановлено."
 }

@@ -14,7 +14,12 @@ local CONFIG_PREFIX = 'plugin_settings."alitura/noctalia-lyrics-3d".'
 local PLUGIN_ID = "alitura/noctalia-lyrics-3d"
 local DISPLAY_MODES = { "auto", "kinetic", "lineByLine", "singleFocus" }
 local LRCLIB_UA = "noctalia-lyrics-3d/2.0 (Noctalia v5 plugin)"
-local POLL_MS = 500
+local POLL_MS = 250
+-- Playback position is dead-reckoned from a local clock. D-Bus only supplies
+-- anchors: track changes, play/pause, seeks and a slow drift sync.
+local POSITION_SYNC_MS = 2000
+local POSITION_DRIFT_MS = 150
+local LYRIC_TIMEOUT_MS = 2500
 
 noctalia.mkdirAll(CACHE)
 noctalia.setUpdateInterval(POLL_MS)
@@ -24,6 +29,8 @@ local song = {
     hasSong = false, title = "", artist = "", album = "", artUrl = "",
     identity = "", busName = "", url = "", playing = false,
     positionMs = 0, lengthMs = 0, rate = 1, status = "Stopped",
+    anchorMs = 0, anchorWallMs = 0, anchorStatus = "Stopped", anchorRate = 1,
+    positionGraceUntil = 0,
 }
 local lyrics = {}
 local plainText = ""
@@ -33,6 +40,8 @@ local lyricsError = ""
 local currentSongKey = ""
 local currentTrackKey = ""
 local fetchGeneration = 0
+local lyricsDeadlineMs = 0
+local lyricsLatencyMs = 0
 local trackUrl = ""
 local trackUrlKey = ""
 local calibrating = false
@@ -150,7 +159,7 @@ local function readSettings()
         allowedWindows = strList(cfg("allowed_windows", {})),
         visibilityMode = tostring(cfg("visibility_mode", "desktop") or "desktop"),
         hideOnFullscreen = boolOr(cfg("hide_on_fullscreen", true), true),
-        hideWhenPaused = boolOr(cfg("hide_when_paused", false), false),
+        hideOnPause = boolOr(cfg("hide_on_pause", true), true),
         monitorScope = tostring(cfg("monitor_scope", "focused") or "focused"),
         themeMode = tostring(cfg("theme_mode", "auto") or "auto"),
         accentBlend = numberOr(cfg("accent_blend", 0.65), 0.65),
@@ -218,12 +227,18 @@ local function writeState()
         url = song.url,
         playing = song.playing,
         status = song.status,
-        positionMs = song.positionMs,
+        positionMs = song.anchorMs,
+        positionAnchorMs = song.anchorMs,
+        positionAnchorWallMs = song.anchorWallMs,
+        positionStatus = song.anchorStatus,
+        positionRate = song.anchorRate,
+        hideOnPause = S.hideOnPause,
         lengthMs = song.lengthMs,
         rate = song.rate,
         lyricsState = lyricsState,
         lyricsProvider = lyricsProvider,
         lyricsError = lyricsError,
+        lyricsLatencyMs = lyricsLatencyMs,
         lyrics = lyrics,
         plainText = plainText,
         visible = visible,
@@ -327,20 +342,65 @@ local function cachePath(artist, title)
     return CACHE .. "/" .. base .. "-" .. hashText(artist .. "|" .. title) .. ".json"
 end
 
+local cacheIndex = nil
+
+local function cacheIndexKey(artist, title)
+    return lower(artist) .. "|" .. lower(title)
+end
+
+-- index.json maps every cached track to its file, so a song change resolves
+-- the cache with one table lookup instead of guessing a path and probing the
+-- filesystem. It is loaded once and kept in memory for the whole session.
+local function loadCacheIndex()
+    if cacheIndex ~= nil then return cacheIndex end
+    cacheIndex = {}
+    local parsed = jsonDecode(noctalia.readFile(CACHE .. "/index.json") or "")
+    if type(parsed) == "table" then
+        for key, entry in pairs(parsed) do
+            if type(entry) == "table" and type(entry.file) == "string" then
+                cacheIndex[key] = entry
+            end
+        end
+    end
+    return cacheIndex
+end
+
+local function saveCacheIndex()
+    if cacheIndex == nil then return end
+    local raw = jsonEncode(cacheIndex)
+    if raw ~= nil then noctalia.writeFile(CACHE .. "/index.json", raw) end
+end
+
 local function readCache(artist, title)
     if not S.cacheEnabled then return nil end
-    local raw = noctalia.readFile(cachePath(artist, title))
+    local index = loadCacheIndex()
+    local key = cacheIndexKey(artist, title)
+    local entry = index[key]
+    local path = entry and entry.file or cachePath(artist, title)
+    local raw = noctalia.readFile(path)
+    if raw == nil or trim(raw) == "" then return nil end
+    if entry == nil then
+        index[key] = { file = path, at = noctalia.nowMs() }
+        saveCacheIndex()
+    end
     return jsonDecode(raw)
 end
 
 local function writeCache(artist, title, synced, plain, provider, instrumental)
     if not S.cacheEnabled then return end
+    local path = cachePath(artist, title)
     local raw = jsonEncode({
         title = title, artist = artist, syncedLyrics = synced or "",
         plainLyrics = plain or "", provider = provider or "LRCLIB",
         instrumental = instrumental == true, fetchedAtMs = noctalia.nowMs(),
     })
-    if raw ~= nil then noctalia.writeFile(cachePath(artist, title), raw) end
+    if raw == nil then return end
+    noctalia.writeFile(path, raw)
+    local index = loadCacheIndex()
+    index[cacheIndexKey(artist, title)] = {
+        file = path, artist = artist, title = title, at = noctalia.nowMs(),
+    }
+    saveCacheIndex()
 end
 
 -- ── lyrics state transitions ────────────────────────────────────────────────
@@ -374,7 +434,8 @@ local function applyLyrics(synced, plain, provider, instrumental)
 end
 
 local function httpGet(url, callback)
-    noctalia.runAsync({ "curl", "-sSf", "-m", "8", "-4", "-H", "User-Agent: " .. LRCLIB_UA, url },
+    noctalia.runAsync({ "curl", "-sSf", "--connect-timeout", "1", "-m", "3", "-4",
+        "-H", "User-Agent: " .. LRCLIB_UA, url },
         function(result)
             callback({
                 ok = type(result) == "table" and result.exitCode == 0,
@@ -393,6 +454,7 @@ local function fetchLyrics()
 
     local cached = readCache(artist, title)
     if cached ~= nil then
+        lyricsLatencyMs = 0
         local synced = trim(cached.syncedLyrics or "")
         local plain = trim(cached.plainLyrics or "")
         if synced ~= "" or (plain ~= "" and S.showPlainLyrics) or cached.instrumental == true then
@@ -402,18 +464,39 @@ local function fetchLyrics()
     end
 
     local generation = fetchGeneration
+    local startedMs = noctalia.nowMs()
     lyricsState = "loading"
     lyricsError = ""
     lyrics = {}
     plainText = ""
+    lyricsDeadlineMs = noctalia.nowMs() + LYRIC_TIMEOUT_MS
 
-    noctalia.runAsync({ "sleep", "15" }, function()
-        if generation == fetchGeneration and lyricsState == "loading" then
-            lyricsState = "error"
-            lyricsError = "LRCLIB isteği zaman aşımına uğradı"
-            writeState()
-        end
-    end)
+    -- /api/get and /api/search start together: the first usable answer wins,
+    -- so a 404 on the exact endpoint no longer costs a second round trip
+    -- before the search begins. Both are bounded by LYRIC_TIMEOUT_MS.
+    local pending = 2
+    local settled = false
+    local transportErrors = 0
+
+    local function finishAttempt()
+        pending = pending - 1
+        if settled or generation ~= fetchGeneration or pending > 0 then return end
+        if lyricsState ~= "loading" then return end
+        lyricsState = transportErrors >= 2 and "error" or "notfound"
+        if lyricsState == "error" then lyricsError = "LRCLIB bağlantı hatası" end
+        lyricsDeadlineMs = 0
+        writeState()
+    end
+
+    local function accept(synced, plain, provider, instrumental)
+        if settled or generation ~= fetchGeneration then return false end
+        if not applyLyrics(synced, plain, provider, instrumental) then return false end
+        settled = true
+        lyricsLatencyMs = noctalia.nowMs() - startedMs
+        lyricsDeadlineMs = 0
+        writeState()
+        return true
+    end
 
     local duration = 0
     if song.lengthMs > 0 then duration = math.floor(song.lengthMs / 1000 + 0.5) end
@@ -422,75 +505,62 @@ local function fetchLyrics()
     if trim(album) ~= "" then getUrl = getUrl .. "&album_name=" .. urlEncode(album) end
     if duration > 0 then getUrl = getUrl .. "&duration=" .. tostring(duration) end
 
-    local function searchFallback(hadTransportError)
-        if generation ~= fetchGeneration then return end
-        local searchUrl = "https://lrclib.net/api/search?track_name=" .. urlEncode(title)
-            .. "&artist_name=" .. urlEncode(artist or "")
-        httpGet(searchUrl, function(response)
-            if generation ~= fetchGeneration then return end
-            if not response.ok then
-                lyricsState = hadTransportError and "error" or "notfound"
-                if lyricsState == "error" then lyricsError = "LRCLIB bağlantı hatası" end
-                writeState()
-                return
-            end
-            local list = jsonDecode(response.body)
-            if type(list) ~= "table" or #list == 0 then
-                lyricsState = "notfound"
-                writeState()
-                return
-            end
+    local searchUrl = "https://lrclib.net/api/search?track_name=" .. urlEncode(title)
+        .. "&artist_name=" .. urlEncode(artist or "")
 
-            local best, bestScore = nil, -1
-            for _, candidate in ipairs(list) do
-                local score = 0
-                if lower(candidate.trackName or "") == lower(title) then score = score + 4 end
-                if lower(candidate.artistName or "") == lower(artist or "") then score = score + 3 end
-                local candidateDuration = numberOr(candidate.duration, 0)
-                if duration > 0 and candidateDuration > 0 then
-                    local delta = math.abs(candidateDuration - duration)
-                    if delta <= 2 then score = score + 3
-                    elseif delta <= 8 then score = score + 1 end
-                end
-                if trim(candidate.syncedLyrics or "") ~= "" then score = score + 2 end
-                if candidate.instrumental == true then score = score - 1 end
-                if score > bestScore then best, bestScore = candidate, score end
+    httpGet(searchUrl, function(response)
+        if generation ~= fetchGeneration then return end
+        if not response.ok then
+            transportErrors = transportErrors + 1
+            finishAttempt()
+            return
+        end
+        local list = jsonDecode(response.body)
+        if type(list) ~= "table" or #list == 0 then
+            finishAttempt()
+            return
+        end
+
+        local best, bestScore = nil, -1
+        for _, candidate in ipairs(list) do
+            local score = 0
+            if lower(candidate.trackName or "") == lower(title) then score = score + 4 end
+            if lower(candidate.artistName or "") == lower(artist or "") then score = score + 3 end
+            local candidateDuration = numberOr(candidate.duration, 0)
+            if duration > 0 and candidateDuration > 0 then
+                local delta = math.abs(candidateDuration - duration)
+                if delta <= 2 then score = score + 3
+                elseif delta <= 8 then score = score + 1 end
             end
-            if best == nil then
-                lyricsState = "notfound"
-            else
-                applyLyrics(best.syncedLyrics or "", best.plainLyrics or "",
-                    "LRCLIB", best.instrumental == true)
-            end
-            writeState()
-        end)
-    end
+            if trim(candidate.syncedLyrics or "") ~= "" then score = score + 2 end
+            if candidate.instrumental == true then score = score - 1 end
+            if score > bestScore then best, bestScore = candidate, score end
+        end
+        if best ~= nil then
+            accept(best.syncedLyrics or "", best.plainLyrics or "",
+                "LRCLIB", best.instrumental == true)
+        end
+        finishAttempt()
+    end)
 
     httpGet(getUrl, function(response)
         if generation ~= fetchGeneration then return end
         if response.ok then
             local data = jsonDecode(response.body)
             if type(data) == "table" then
-                local synced = trim(data.syncedLyrics or "")
-                local plain = trim(data.plainLyrics or "")
-                if synced ~= "" or plain ~= "" or data.instrumental == true then
-                    local accepted = applyLyrics(synced, plain, "LRCLIB", data.instrumental == true)
-                    if accepted or data.instrumental == true or not S.showPlainLyrics then
-                        writeState()
-                        return
-                    end
-                end
+                accept(data.syncedLyrics, data.plainLyrics, "LRCLIB", data.instrumental == true)
             end
-            searchFallback(false)
         else
-            -- curl -f exits 22 on HTTP 4xx/5xx (a normal "no match").
-            searchFallback(response.exit ~= 22)
+            transportErrors = transportErrors + 1
         end
+        finishAttempt()
     end)
 end
 
 local function invalidateLyrics()
     fetchGeneration = fetchGeneration + 1
+    lyricsDeadlineMs = 0
+    lyricsLatencyMs = 0
     currentTrackKey = ""
     setLyricsIdle()
 end
@@ -573,7 +643,8 @@ local function computeVisibility()
     if not S.enabled or userHidden then return false, "bottom" end
     if calibrating then return true, "overlay" end
     if not song.hasSong then return false, "bottom" end
-    if S.hideWhenPaused and not song.playing then return false, "bottom" end
+    -- A pause is not an instant hide: the overlay keeps its surface and the
+    -- renderer fades it out after 1.5 s, so short pauses never blink.
     if S.hideOnFullscreen and activeWindow ~= nil and numberOr(activeWindow.fullscreen, 0) > 0 then
         return false, "bottom"
     end
@@ -733,6 +804,8 @@ local function clearMedia()
         hasSong = false, title = "", artist = "", album = "", artUrl = "",
         identity = "", busName = "", url = "", playing = false,
         positionMs = 0, lengthMs = 0, rate = 1, status = "Stopped",
+        anchorMs = 0, anchorWallMs = noctalia.nowMs(), anchorStatus = "Stopped", anchorRate = 1,
+        positionGraceUntil = 0,
     }
     currentSongKey = ""
     trackUrl = ""
@@ -768,11 +841,40 @@ local function refreshMedia()
     song.artUrl = tostring(player.artUrl or "")
     song.identity = tostring(player.identity or busName)
     song.busName = busName
-    song.playing = player.status == "Playing"
-    song.status = tostring(player.status or "Stopped")
-    song.positionMs = numberOr(player.positionMs, 0)
+
+    local nowMs = noctalia.nowMs()
+    local status = tostring(player.status or "Stopped")
+    local actualMs = numberOr(player.positionMs, 0)
+    local rate = numberOr(player.rate, 1)
+    local expectedMs = song.anchorMs
+    if song.anchorStatus == "Playing" then
+        expectedMs = expectedMs + math.max(0, nowMs - song.anchorWallMs) * (song.anchorRate or 1)
+    end
+    local drift = math.abs(actualMs - expectedMs)
+    local elapsed = nowMs - song.anchorWallMs
+    local statusChanged = status ~= song.anchorStatus
+    local inGrace = nowMs < (song.positionGraceUntil or 0)
+    if statusChanged and status == "Playing" and not changed then
+        -- MPRIS may report a stale Position right after resume. Keep the
+        -- pause anchor and restart the local clock instead of jumping back.
+        song.anchorWallMs = nowMs
+        song.anchorStatus = status
+        song.anchorRate = rate
+        song.positionGraceUntil = nowMs + 800
+    elseif changed or statusChanged or (not inGrace and (drift > 1200
+            or (elapsed >= POSITION_SYNC_MS and drift > POSITION_DRIFT_MS))) then
+        -- Track change, pause/stop, a seek, or the periodic drift sync.
+        song.anchorMs = actualMs
+        song.anchorWallMs = nowMs
+        song.anchorStatus = status
+        song.anchorRate = rate
+        song.positionGraceUntil = 0
+    end
+    song.playing = status == "Playing"
+    song.status = status
+    song.positionMs = song.anchorMs
     song.lengthMs = numberOr(player.lengthMs, 0)
-    song.rate = numberOr(player.rate, 1)
+    song.rate = rate
     song.url = trackUrlKey == key and trackUrl or ""
 
     if changed then
@@ -948,6 +1050,17 @@ end)
 function update()
     tick = tick + 1
     readControl()
+    if lyricsState == "loading" and lyricsDeadlineMs > 0
+            and noctalia.nowMs() > lyricsDeadlineMs then
+        -- Give up quickly: a slow LRCLIB response must not leave the overlay
+        -- stuck on "loading" after the song has already started.
+        fetchGeneration = fetchGeneration + 1
+        lyricsDeadlineMs = 0
+        lyricsState = "error"
+        lyricsError = "LRCLIB isteği zaman aşımına uğradı"
+        lyrics = {}
+        writeState()
+    end
     refreshMedia()
     if tick == 1 or tick % 2 == 0 then pollHypr() end
     writeState()

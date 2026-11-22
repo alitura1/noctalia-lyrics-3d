@@ -495,6 +495,18 @@ Item {
                 scale: 0.96 + 0.04 * root.lineReveal
                 transform: Translate { y: (1 - root.lineReveal) * -10 }
 
+                // One GPU layer and one MultiEffect for the active line: the
+                // glow is composited once per frame, not once per word.
+                layer.enabled: true
+                layer.effect: MultiEffect {
+                    blurEnabled: false
+                    shadowEnabled: true
+                    shadowColor: root.activeGlowColor
+                    shadowBlur: 0.7 * root.activeGlow
+                    shadowHorizontalOffset: 0
+                    shadowVerticalOffset: 0
+                }
+
                 Flow {
                     id: wordFlow
                     width: parent.width
@@ -528,26 +540,18 @@ Item {
                             font.capitalization: root.typographyStyle === "pixel"
                                 ? Font.AllUppercase : Font.MixedCase
 
-                            layer.enabled: true
-                            layer.effect: MultiEffect {
-                                blurEnabled: !spoken
-                                blur: 0.28
-                                brightness: current ? 0.16 : 0
-                                shadowEnabled: true
-                                shadowColor: current ? root.activeGlowColor : root.shadowColor
-                                shadowBlur: current ? 0.9 * root.activeGlow : 0.18
-                                shadowHorizontalOffset: 0
-                                shadowVerticalOffset: 0
-                            }
-
+                            // Contours come from Text.Outline above. No
+                            // per-word layer or MultiEffect: one shared glow
+                            // on activeBlock covers the whole line instead of
+                            // a blur effect per glyph run.
                             Behavior on opacity {
-                                NumberAnimation { duration: 130; easing.type: Easing.OutQuad }
+                                NumberAnimation { duration: 140; easing.type: Easing.OutCubic }
                             }
                             Behavior on scale {
-                                NumberAnimation { duration: 150; easing.type: Easing.OutBack }
+                                NumberAnimation { duration: 140; easing.type: Easing.OutCubic }
                             }
                             Behavior on color {
-                                ColorAnimation { duration: 150 }
+                                ColorAnimation { duration: 140 }
                             }
                         }
                     }

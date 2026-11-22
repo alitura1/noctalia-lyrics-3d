@@ -93,8 +93,6 @@
   "settings.visibility_mode.always": "Sempre",
   "settings.hide_on_fullscreen.label": "Ocultar em tela cheia",
   "settings.hide_on_fullscreen.description": "Oculta as letras quando uma janela está em tela cheia.",
-  "settings.hide_when_paused.label": "Ocultar quando pausado",
-  "settings.hide_when_paused.description": "Oculta a camada enquanto a reprodução está pausada.",
   "settings.monitor_scope.label": "Monitores",
   "settings.monitor_scope.description": "Desenha apenas na saída em foco ou em todas as saídas.",
   "settings.monitor_scope.focused": "Em foco",
@@ -119,5 +117,7 @@
   "settings.cache_enabled.label": "Guardar letras em cache",
   "settings.cache_enabled.description": "Armazena as respostas do LRCLIB em ~/.cache/noctalia-lyrics.",
   "settings.save_perspectives.label": "Salvar perspectiva por papel de parede",
-  "settings.save_perspectives.description": "Lembra os ângulos X/Y/Z de cada papel de parede em perspectives.json."
+  "settings.save_perspectives.description": "Lembra os ângulos X/Y/Z de cada papel de parede em perspectives.json.",
+  "settings.hide_on_pause.label": "Ocultar quando pausado",
+  "settings.hide_on_pause.description": "Oculta a camada enquanto a reprodução está pausada."
 }

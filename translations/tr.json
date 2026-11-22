@@ -93,8 +93,6 @@
   "settings.visibility_mode.always": "Her zaman",
   "settings.hide_on_fullscreen.label": "Tam ekranda gizle",
   "settings.hide_on_fullscreen.description": "Bir pencere tam ekranken sözleri gizle.",
-  "settings.hide_when_paused.label": "Duraklatınca gizle",
-  "settings.hide_when_paused.description": "Oynatma duraklatıldığında katmanı gizle.",
   "settings.monitor_scope.label": "Monitörler",
   "settings.monitor_scope.description": "Yalnızca odaklı çıkışta veya tüm çıkışlarda çiz.",
   "settings.monitor_scope.focused": "Odaklı",
@@ -119,5 +117,7 @@
   "settings.cache_enabled.label": "Sözleri önbellekle",
   "settings.cache_enabled.description": "LRCLIB yanıtlarını ~/.cache/noctalia-lyrics içinde sakla.",
   "settings.save_perspectives.label": "Duvar kağıdı başına perspektif",
-  "settings.save_perspectives.description": "Her duvar kağıdı için X/Y/Z açılarını perspectives.json içinde hatırla."
+  "settings.save_perspectives.description": "Her duvar kağıdı için X/Y/Z açılarını perspectives.json içinde hatırla.",
+  "settings.hide_on_pause.label": "Duraklatınca gizle",
+  "settings.hide_on_pause.description": "Oynatma duraklatıldığında katmanı gizle."
 }

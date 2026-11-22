@@ -3,7 +3,7 @@
 
 id = "alitura/noctalia-lyrics-3d"
 name = "Noctalia Lyrics 3D"
-version = "2.3.0"
+version = "2.3.1"
 plugin_api = 51
 author = "alitura"
 license = "MIT"
@@ -359,11 +359,11 @@ description_key = "settings.hide_on_fullscreen.description"
 default = true
 
 [[setting]]
-key = "hide_when_paused"
+key = "hide_on_pause"
 type = "bool"
-label_key = "settings.hide_when_paused.label"
-description_key = "settings.hide_when_paused.description"
-default = false
+label_key = "settings.hide_on_pause.label"
+description_key = "settings.hide_on_pause.description"
+default = true
 
 [[setting]]
 key = "monitor_scope"

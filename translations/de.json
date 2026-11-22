@@ -93,8 +93,6 @@
   "settings.visibility_mode.always": "Immer",
   "settings.hide_on_fullscreen.label": "Bei Vollbild ausblenden",
   "settings.hide_on_fullscreen.description": "Blendet Songtexte aus, wenn ein Fenster im Vollbild ist.",
-  "settings.hide_when_paused.label": "Bei Pause ausblenden",
-  "settings.hide_when_paused.description": "Blendet die Ebene aus, solange die Wiedergabe pausiert ist.",
   "settings.monitor_scope.label": "Monitore",
   "settings.monitor_scope.description": "Nur auf dem fokussierten Ausgang oder auf allen Ausgängen zeichnen.",
   "settings.monitor_scope.focused": "Fokussiert",
@@ -119,5 +117,7 @@
   "settings.cache_enabled.label": "Songtexte zwischenspeichern",
   "settings.cache_enabled.description": "Speichert LRCLIB-Antworten in ~/.cache/noctalia-lyrics.",
   "settings.save_perspectives.label": "Perspektive pro Hintergrundbild speichern",
-  "settings.save_perspectives.description": "Merkt sich die X/Y/Z-Winkel für jedes Hintergrundbild in perspectives.json."
+  "settings.save_perspectives.description": "Merkt sich die X/Y/Z-Winkel für jedes Hintergrundbild in perspectives.json.",
+  "settings.hide_on_pause.label": "Bei Pause ausblenden",
+  "settings.hide_on_pause.description": "Blendet die Ebene aus, solange die Wiedergabe pausiert ist."
 }

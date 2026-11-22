@@ -26,6 +26,10 @@ ShellRoot {
     property real livePositionMs: 0
     property real lastUpdatedMs: 0
     property bool sawState: false
+    property bool pauseDismissed: false
+
+    readonly property bool hasSong: root.st.hasSong === true
+    readonly property bool hideOnPause: root.cfg.hideOnPause !== false
 
     property bool calibratingLocal: false
     property bool calibrationSaved: false
@@ -76,20 +80,42 @@ ShellRoot {
         return Math.max(-2, Math.min(2, normalized * 2 * strength))
     }
 
-    // Run the lyric clock locally between service snapshots (500 ms) so the
-    // active line and karaoke progress do not step twice per second.
+    // 60 Hz local clock. The service only publishes anchors (track change,
+    // play/pause, seek, 2 s drift sync), so the playhead advances every frame
+    // from the local monotonic clock instead of stepping on D-Bus polls.
     Timer {
-        interval: 100
+        interval: 16
         repeat: true
         running: root.playing && !root.calibratingLocal
         onTriggered: {
-            if (!root.playing) return
-            var rate = Number(root.st.rate) || 1
+            var rate = Number(root.st.positionRate) || Number(root.st.rate) || 1
             var next = root.anchorPositionMs + (Date.now() - root.anchorWallMs) * rate
             var length = Number(root.st.lengthMs) || 0
             if (length > 0 && next > length) next = length
             root.livePositionMs = next
         }
+    }
+
+    // A pause is soft: no blink on a short pause, then the overlay dissolves.
+    Timer {
+        id: pauseTimer
+        interval: 1500
+        repeat: false
+        onTriggered: root.pauseDismissed = true
+    }
+
+    function updatePauseTimer() {
+        if (!root.hideOnPause || !root.hasSong) {
+            pauseTimer.stop()
+            root.pauseDismissed = false
+            return
+        }
+        if (root.playing) {
+            pauseTimer.stop()
+            if (root.pauseDismissed) root.pauseDismissed = false
+            return
+        }
+        if (!pauseTimer.running && !root.pauseDismissed) pauseTimer.start()
     }
 
     // Safety net for FileView watchers: a snapshot can be replaced while the
@@ -195,15 +221,21 @@ ShellRoot {
             || num(previous.positionY, 78) !== num(next.positionY, 78)
         )
 
-        if (typeof parsed.positionMs === "number" && parsed.updatedAtMs !== root.lastUpdatedMs) {
-            root.anchorPositionMs = parsed.positionMs
-            root.anchorWallMs = Date.now()
-            root.livePositionMs = parsed.positionMs
+        // Anchors arrive with the service's wall stamp. Applying one only when
+        // that stamp changes keeps the local clock authoritative between
+        // events, so a repeated snapshot never yanks the playhead backwards.
+        var anchorWall = Number(parsed.positionAnchorWallMs) || 0
+        var anchorMs = Number(parsed.positionAnchorMs)
+        if (!isNaN(anchorMs) && anchorWall > 0 && anchorWall !== root.anchorWallMs) {
+            root.anchorPositionMs = anchorMs
+            root.anchorWallMs = anchorWall
+            if (parsed.playing !== true) root.livePositionMs = anchorMs
         }
         root.lastUpdatedMs = parsed.updatedAtMs || 0
         root.sawState = true
         root.st = parsed
         root.cfg = next
+        root.updatePauseTimer()
 
         if (hostChanged && root.perspectiveActive) root.perspectiveActive = false
         if (!root.perspectiveActive) root.applyHostGeometry()
@@ -449,12 +481,18 @@ ShellRoot {
                 anchors.fill: parent
                 visible: root.calibratingLocal
                     ? (modelData && modelData.name === root.calibrationMonitor)
-                    : (root.st.visible === true && (cfg.monitorScope === "all"
-                        || (modelData && modelData.name === root.st.focusedMonitor)))
+                    : (root.st.visible === true && !root.pauseDismissed
+                        && (cfg.monitorScope === "all"
+                            || (modelData && modelData.name === root.st.focusedMonitor)))
                 opacity: visible ? 1 : 0
 
+                // 180 ms in, 300 ms out: resuming is immediate, a pause
+                // dissolves instead of blinking the layer away.
                 Behavior on opacity {
-                    NumberAnimation { duration: 320; easing.type: Easing.InOutQuad }
+                    NumberAnimation {
+                        duration: surfaceContent.visible ? 180 : 300
+                        easing.type: Easing.OutCubic
+                    }
                 }
 
                 LyricsRenderer3D {

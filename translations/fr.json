@@ -93,8 +93,6 @@
   "settings.visibility_mode.always": "Toujours",
   "settings.hide_on_fullscreen.label": "Masquer en plein écran",
   "settings.hide_on_fullscreen.description": "Masque les paroles lorsqu'une fenêtre est en plein écran.",
-  "settings.hide_when_paused.label": "Masquer en pause",
-  "settings.hide_when_paused.description": "Masque la couche lorsque la lecture est en pause.",
   "settings.monitor_scope.label": "Moniteurs",
   "settings.monitor_scope.description": "Dessine uniquement sur la sortie ciblée ou sur toutes les sorties.",
   "settings.monitor_scope.focused": "Ciblé",
@@ -119,5 +117,7 @@
   "settings.cache_enabled.label": "Mettre les paroles en cache",
   "settings.cache_enabled.description": "Stocke les réponses LRCLIB dans ~/.cache/noctalia-lyrics.",
   "settings.save_perspectives.label": "Mémoriser la perspective par fond d'écran",
-  "settings.save_perspectives.description": "Retient les angles X/Y/Z de chaque fond d'écran dans perspectives.json."
+  "settings.save_perspectives.description": "Retient les angles X/Y/Z de chaque fond d'écran dans perspectives.json.",
+  "settings.hide_on_pause.label": "Masquer en pause",
+  "settings.hide_on_pause.description": "Masque la couche lorsque la lecture est en pause."
 }

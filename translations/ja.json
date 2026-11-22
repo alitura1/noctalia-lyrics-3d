@@ -93,8 +93,6 @@
   "settings.visibility_mode.always": "常に表示",
   "settings.hide_on_fullscreen.label": "全画面時に非表示",
   "settings.hide_on_fullscreen.description": "ウィンドウが全画面のときに歌詞を隠します。",
-  "settings.hide_when_paused.label": "一時停止時に非表示",
-  "settings.hide_when_paused.description": "再生が一時停止している間はレイヤーを隠します。",
   "settings.monitor_scope.label": "モニター",
   "settings.monitor_scope.description": "フォーカス中の出力のみ、またはすべての出力に描画します。",
   "settings.monitor_scope.focused": "フォーカス中",
@@ -119,5 +117,7 @@
   "settings.cache_enabled.label": "歌詞をキャッシュ",
   "settings.cache_enabled.description": "LRCLIB の応答を ~/.cache/noctalia-lyrics に保存します。",
   "settings.save_perspectives.label": "壁紙ごとの視点を保存",
-  "settings.save_perspectives.description": "壁紙ごとの X/Y/Z 角度を perspectives.json に記憶します。"
+  "settings.save_perspectives.description": "壁紙ごとの X/Y/Z 角度を perspectives.json に記憶します。",
+  "settings.hide_on_pause.label": "一時停止時に非表示",
+  "settings.hide_on_pause.description": "再生が一時停止している間はレイヤーを隠します。"
 }
