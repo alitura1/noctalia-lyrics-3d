@@ -121,5 +121,9 @@
   "settings.save_perspectives.label": "Mémoriser la perspective par fond d'écran",
   "settings.save_perspectives.description": "Retient les angles X/Y/Z de chaque fond d'écran dans perspectives.json.",
   "settings.hide_on_pause.label": "Masquer en pause",
-  "settings.hide_on_pause.description": "Masque la couche lorsque la lecture est en pause."
+  "settings.hide_on_pause.description": "Masque la couche lorsque la lecture est en pause.",
+  "settings.wallpaper_order.label": "Ordre de parcours",
+  "settings.wallpaper_order.description": "Ordre de visite des zones calmes.",
+  "settings.wallpaper_order.tour": "Parcours séquentiel",
+  "settings.wallpaper_order.shuffle": "Aléatoire"
 }

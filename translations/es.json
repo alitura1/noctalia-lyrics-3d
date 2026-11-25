@@ -121,5 +121,9 @@
   "settings.save_perspectives.label": "Guardar perspectiva por fondo",
   "settings.save_perspectives.description": "Recuerda los ángulos X/Y/Z de cada fondo en perspectives.json.",
   "settings.hide_on_pause.label": "Ocultar en pausa",
-  "settings.hide_on_pause.description": "Oculta la capa mientras la reproducción está en pausa."
+  "settings.hide_on_pause.description": "Oculta la capa mientras la reproducción está en pausa.",
+  "settings.wallpaper_order.label": "Orden de recorrido",
+  "settings.wallpaper_order.description": "Orden en que se visitan los puntos tranquilos.",
+  "settings.wallpaper_order.tour": "Recorrido secuencial",
+  "settings.wallpaper_order.shuffle": "Aleatorio"
 }

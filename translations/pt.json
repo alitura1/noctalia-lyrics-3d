@@ -121,5 +121,9 @@
   "settings.save_perspectives.label": "Salvar perspectiva por papel de parede",
   "settings.save_perspectives.description": "Lembra os ângulos X/Y/Z de cada papel de parede em perspectives.json.",
   "settings.hide_on_pause.label": "Ocultar quando pausado",
-  "settings.hide_on_pause.description": "Oculta a camada enquanto a reprodução está pausada."
+  "settings.hide_on_pause.description": "Oculta a camada enquanto a reprodução está pausada.",
+  "settings.wallpaper_order.label": "Ordem do percurso",
+  "settings.wallpaper_order.description": "Ordem em que os pontos calmos são visitados.",
+  "settings.wallpaper_order.tour": "Percurso sequencial",
+  "settings.wallpaper_order.shuffle": "Aleatório"
 }

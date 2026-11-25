@@ -45,6 +45,8 @@ Item {
     // busy subject in the middle.
     property bool wallpaperAware: false
     property var wallpaperGrid: null
+    // "tour" walks the calm spots in order, "shuffle" hops between them.
+    property string wallpaperOrder: "tour"
     property int centerSafeZone: 32
     property string displayMode: "auto"
     property int placementCycle: -1
@@ -185,9 +187,25 @@ Item {
 
     // Average busy-ness under the real type block, so a narrow line may sit
     // closer to the subject than a wide one.
+    // Real painted footprint of the block, so a spot never lets the type run
+    // off the screen (the estimate includes the glow and the edge margin).
+    function spotHalfWidth() {
+        var blockWidth = Math.min(root.width * 0.96, root.resolvedMaxWidth) * root.sceneScale
+        return Math.min(46, (blockWidth / 2 + 26) / Math.max(1, root.width) * 100)
+    }
+
+    function spotHalfHeight() {
+        var extra = (root.outgoingVisible || root.showNextLine) ? root.fontSize * 1.7 : 0
+        // Never assume less than ~1.5 lines: the next line may wrap taller than
+        // the one that was on screen when the spot was picked.
+        var blockHeight = Math.max(root.activeBlockHeight, root.fontSize * 2.2)
+            * root.sceneScale + extra
+        return Math.min(40, (blockHeight / 2 + 24) / Math.max(1, root.height) * 100)
+    }
+
     function spotScore(xPct, yPct) {
-        var hw = Math.max(4, root.blockHalfWidthPercent)
-        var hh = Math.max(4, root.blockHalfHeightPercent)
+        var hw = Math.max(4, root.spotHalfWidth())
+        var hh = Math.max(4, root.spotHalfHeight())
         var left = Math.round((xPct - hw) / 100 * root.gridCols)
         var right = Math.round((xPct + hw) / 100 * root.gridCols)
         var top = Math.round((yPct - hh) / 100 * root.gridRows)
@@ -210,13 +228,14 @@ Item {
     property real tourHalfWidth: -1
 
     function buildWallpaperTour() {
-        var hw = Math.max(4, root.blockHalfWidthPercent)
-        var hh = Math.max(4, root.blockHalfHeightPercent)
+        var hw = Math.max(4, root.spotHalfWidth())
+        var hh = Math.max(4, root.spotHalfHeight())
         // Keep the whole block on screen, margins included.
+        var topInset = Math.max(3, 52 / Math.max(1, root.height) * 100)
         var xMin = Math.min(hw + 3, 50)
         var xMax = Math.max(97 - hw, 50)
-        var yMin = Math.min(hh + 4, 50)
-        var yMax = Math.max(96 - hh, 50)
+        var yMin = Math.min(hh + topInset, 50)
+        var yMax = Math.max(94 - hh, 50)
         var spots = []
         var best = Infinity
         for (var xi = 0; xi <= 6; xi++) {
@@ -263,7 +282,7 @@ Item {
         if (!root.wallpaperPlaced)
             return
         if (root.wallpaperTour.length > 0
-                && Math.abs(root.tourHalfWidth - root.blockHalfWidthPercent) < 3)
+                && Math.abs(root.tourHalfWidth - root.spotHalfWidth()) < 3)
             return
         root.buildWallpaperTour()
     }
@@ -272,15 +291,32 @@ Item {
         root.ensureWallpaperTour()
         if (root.wallpaperTour.length === 0)
             return
-        // Two or three steps per line, so the drift is visible within a verse
-        // instead of crawling one cell at a time.
-        var step = 2 + Math.floor(Math.random() * 2)
-        root.wallpaperTourIndex = (root.wallpaperTourIndex + step) % root.wallpaperTour.length
-        var spot = root.wallpaperTour[root.wallpaperTourIndex]
-        root.spotX = spot.x
-        root.spotY = spot.y
-        console.log("[placement] spot " + spot.x + "%/" + spot.y + "% of "
-            + root.wallpaperTour.length + " calm spots")
+        var spot = null
+        if (root.wallpaperOrder === "shuffle") {
+            var pool = root.wallpaperTour.filter(function (candidate) {
+                return candidate.x !== Math.round(root.spotX)
+                    || candidate.y !== Math.round(root.spotY)
+            })
+            if (pool.length === 0)
+                pool = root.wallpaperTour
+            spot = pool[Math.floor(Math.random() * pool.length)]
+        } else {
+            // Two or three steps per line, so the drift is visible within a
+            // verse instead of crawling one cell at a time.
+            var step = 2 + Math.floor(Math.random() * 2)
+            root.wallpaperTourIndex = (root.wallpaperTourIndex + step) % root.wallpaperTour.length
+            spot = root.wallpaperTour[root.wallpaperTourIndex]
+        }
+        // Clamp against the current line's real size: the type block must stay
+        // fully on screen even when a line is wider than the tour was built for.
+        var hw = root.spotHalfWidth()
+        var hh = root.spotHalfHeight()
+        // The top inset clears the shell bar, so a line never hides under it.
+        var topInset = Math.max(3, 52 / Math.max(1, root.height) * 100)
+        root.spotX = Math.max(hw + 2, Math.min(98 - hw, spot.x))
+        root.spotY = Math.max(hh + topInset, Math.min(94 - hh, spot.y))
+        console.log("[placement] spot " + root.spotX + "%/" + root.spotY + "% ("
+            + root.wallpaperOrder + ", " + root.wallpaperTour.length + " calm spots)")
     }
 
     onWallpaperPlacedChanged: {

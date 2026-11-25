@@ -121,5 +121,9 @@
   "settings.save_perspectives.label": "Duvar kağıdı başına perspektif",
   "settings.save_perspectives.description": "Her duvar kağıdı için X/Y/Z açılarını perspectives.json içinde hatırla.",
   "settings.hide_on_pause.label": "Duraklatınca gizle",
-  "settings.hide_on_pause.description": "Oynatma duraklatıldığında katmanı gizle."
+  "settings.hide_on_pause.description": "Oynatma duraklatıldığında katmanı gizle.",
+  "settings.wallpaper_order.label": "Gezinme sırası",
+  "settings.wallpaper_order.description": "Sakin duvar kağıdı noktalarının ziyaret sırası.",
+  "settings.wallpaper_order.tour": "Sıralı tur",
+  "settings.wallpaper_order.shuffle": "Karışık"
 }

@@ -140,6 +140,7 @@ local function readSettings()
         positionY = positionY,
         dynamicPlacement = boolOr(cfg("dynamic_placement", true), true),
         wallpaperAware = boolOr(cfg("wallpaper_aware", true), true),
+        wallpaperOrder = tostring(cfg("wallpaper_order", "tour") or "tour"),
         centerSafeZone = numberOr(cfg("center_safe_zone", 32), 32),
         displayMode = tostring(cfg("display_mode", "auto") or "auto"),
         showNowPlaying = boolOr(cfg("show_now_playing", true), true),

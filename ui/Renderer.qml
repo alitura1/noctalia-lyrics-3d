@@ -539,6 +539,7 @@ ShellRoot {
                     // The service analyses the wallpaper once per change and
                     // publishes its energy grid; the renderer roams the calm cells.
                     wallpaperGrid: root.st.wallpaperGrid || null
+                    wallpaperOrder: String(cfg.wallpaperOrder || "tour")
                     centerSafeZone: num(cfg.centerSafeZone, 32)
                     displayMode: String(cfg.displayMode || "auto")
                     showNowPlaying: cfg.showNowPlaying !== false

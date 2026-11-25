@@ -121,5 +121,9 @@
   "settings.save_perspectives.label": "壁紙ごとの視点を保存",
   "settings.save_perspectives.description": "壁紙ごとの X/Y/Z 角度を perspectives.json に記憶します。",
   "settings.hide_on_pause.label": "一時停止時に非表示",
-  "settings.hide_on_pause.description": "再生が一時停止している間はレイヤーを隠します。"
+  "settings.hide_on_pause.description": "再生が一時停止している間はレイヤーを隠します。",
+  "settings.wallpaper_order.label": "移動順",
+  "settings.wallpaper_order.description": "落ち着いた場所を巡回する順番。",
+  "settings.wallpaper_order.tour": "順番に巡回",
+  "settings.wallpaper_order.shuffle": "ランダム"
 }

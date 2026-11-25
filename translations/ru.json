@@ -121,5 +121,9 @@
   "settings.save_perspectives.label": "Сохранять перспективу для обоев",
   "settings.save_perspectives.description": "Запоминать углы X/Y/Z для каждых обоев в perspectives.json.",
   "settings.hide_on_pause.label": "Скрывать на паузе",
-  "settings.hide_on_pause.description": "Скрывает слой, пока воспроизведение приостановлено."
+  "settings.hide_on_pause.description": "Скрывает слой, пока воспроизведение приостановлено.",
+  "settings.wallpaper_order.label": "Порядок обхода",
+  "settings.wallpaper_order.description": "Порядок посещения спокойных участков.",
+  "settings.wallpaper_order.tour": "По порядку",
+  "settings.wallpaper_order.shuffle": "Случайно"
 }

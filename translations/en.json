@@ -121,5 +121,9 @@
   "settings.save_perspectives.label": "Save per-wallpaper perspective",
   "settings.save_perspectives.description": "Remember X/Y/Z angles for each wallpaper in perspectives.json.",
   "settings.hide_on_pause.label": "Hide on pause",
-  "settings.hide_on_pause.description": "Fade the lyrics out 1.5 s after playback pauses and bring them back the moment it resumes."
+  "settings.hide_on_pause.description": "Fade the lyrics out 1.5 s after playback pauses and bring them back the moment it resumes.",
+  "settings.wallpaper_order.label": "Roaming order",
+  "settings.wallpaper_order.description": "Order in which the calm wallpaper spots are visited.",
+  "settings.wallpaper_order.tour": "Sequential tour",
+  "settings.wallpaper_order.shuffle": "Shuffle"
 }

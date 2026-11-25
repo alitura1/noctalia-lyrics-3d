@@ -91,6 +91,7 @@ Every setting is also available through `noctalia msg config-set`; the table lis
 | `position_preset` / `position_x` / `position_y` | `custom` / `50` / `78` | Alignment preset and percentage position |
 | `dynamic_placement` | `true` | Move the type block across safe zones on each new line |
 | `wallpaper_aware` | `true` | Analyse the wallpaper once and roam only its calm areas, skipping the subject |
+| `wallpaper_order` | `tour` | `tour` walks the calm spots in order, `shuffle` hops between them randomly |
 | `center_safe_zone` | `32` | Percentage of screen centre kept clear (`0–60`) |
 | `display_mode` | `auto` | `auto`, `kinetic`, `lineByLine` or `singleFocus` |
 | `typography_style` / `typography_max_width` | `modern` / `480` | Poster style and packed block width (`420–520`) |
@@ -280,6 +281,7 @@ Tüm ayarlar `noctalia msg config-set` ile de yazılabilir; tablo v2.3.0 varsay�
 | `position_preset` / `position_x` / `position_y` | `custom` / `50` / `78` | Hizalama ön ayarı ve yüzde konum |
 | `dynamic_placement` | `true` | Her yeni satırda bloğu güvenli bölgeler arasında taşı |
 | `wallpaper_aware` | `true` | Duvar kağıdını bir kez analiz et, sözler yalnızca boş alanlarda gezinsin |
+| `wallpaper_order` | `tour` | `tour` sakin noktaları sırayla gezer, `shuffle` rastgele atlar |
 | `center_safe_zone` | `32` | Merkezde boş bırakılan alan yüzdesi (`%0–%60`) |
 | `display_mode` | `auto` | `auto`, `kinetic`, `lineByLine` veya `singleFocus` |
 | `typography_style` / `typography_max_width` | `modern` / `480` | Poster stili ve blok genişliği (`420–520`) |

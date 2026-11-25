@@ -121,5 +121,9 @@
   "settings.save_perspectives.label": "Perspektive pro Hintergrundbild speichern",
   "settings.save_perspectives.description": "Merkt sich die X/Y/Z-Winkel für jedes Hintergrundbild in perspectives.json.",
   "settings.hide_on_pause.label": "Bei Pause ausblenden",
-  "settings.hide_on_pause.description": "Blendet die Ebene aus, solange die Wiedergabe pausiert ist."
+  "settings.hide_on_pause.description": "Blendet die Ebene aus, solange die Wiedergabe pausiert ist.",
+  "settings.wallpaper_order.label": "Reihenfolge",
+  "settings.wallpaper_order.description": "Reihenfolge, in der die ruhigen Stellen besucht werden.",
+  "settings.wallpaper_order.tour": "Der Reihe nach",
+  "settings.wallpaper_order.shuffle": "Zufällig"
 }

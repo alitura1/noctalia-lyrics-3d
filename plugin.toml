@@ -3,7 +3,7 @@
 
 id = "alitura/noctalia-lyrics-3d"
 name = "Noctalia Lyrics 3D"
-version = "2.4.1"
+version = "2.4.2"
 plugin_api = 51
 author = "alitura"
 license = "MIT"
@@ -146,6 +146,17 @@ type = "bool"
 label_key = "settings.wallpaper_aware.label"
 description_key = "settings.wallpaper_aware.description"
 default = true
+
+[[setting]]
+key = "wallpaper_order"
+type = "select"
+label_key = "settings.wallpaper_order.label"
+description_key = "settings.wallpaper_order.description"
+default = "tour"
+options = [
+  { value = "tour", label_key = "settings.wallpaper_order.tour" },
+  { value = "shuffle", label_key = "settings.wallpaper_order.shuffle" },
+]
 
 [[setting]]
 key = "center_safe_zone"
