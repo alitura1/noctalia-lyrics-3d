@@ -27,6 +27,8 @@
   "settings.offset_y.description": "シーンの位置をピクセル単位で微調整します。",
   "settings.dynamic_placement.label": "動的配置",
   "settings.dynamic_placement.description": "新しい歌詞行が始まるたびに、タイポグラフィブロックを安全な画面領域へ移動します。",
+  "settings.wallpaper_aware.label": "壁紙に合わせた配置",
+  "settings.wallpaper_aware.description": "壁紙を一度だけ解析し、歌詞を最も落ち着いた領域に保ちます。壁紙が変わったときだけ再計算します。",
   "settings.center_safe_zone.label": "中央セーフゾーン",
   "settings.center_safe_zone.description": "壁紙の主要な被写体のために空けておく画面中央の割合。",
   "settings.display_mode.label": "歌詞の表示モード",

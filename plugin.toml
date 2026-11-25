@@ -3,7 +3,7 @@
 
 id = "alitura/noctalia-lyrics-3d"
 name = "Noctalia Lyrics 3D"
-version = "2.3.2"
+version = "2.4.0"
 plugin_api = 51
 author = "alitura"
 license = "MIT"
@@ -138,6 +138,13 @@ key = "dynamic_placement"
 type = "bool"
 label_key = "settings.dynamic_placement.label"
 description_key = "settings.dynamic_placement.description"
+default = true
+
+[[setting]]
+key = "wallpaper_aware"
+type = "bool"
+label_key = "settings.wallpaper_aware.label"
+description_key = "settings.wallpaper_aware.description"
 default = true
 
 [[setting]]

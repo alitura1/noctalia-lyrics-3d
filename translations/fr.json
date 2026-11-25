@@ -27,6 +27,8 @@
   "settings.offset_y.description": "Ajuste finement la position de la scène en pixels.",
   "settings.dynamic_placement.label": "Placement dynamique",
   "settings.dynamic_placement.description": "Déplace le bloc typographique entre les zones d'écran sûres au début de chaque nouvelle ligne de paroles.",
+  "settings.wallpaper_aware.label": "Placement selon le fond",
+  "settings.wallpaper_aware.description": "Analyse le fond une seule fois et garde les paroles sur sa zone la plus calme ; recalculé uniquement quand le fond change.",
   "settings.center_safe_zone.label": "Zone centrale protégée",
   "settings.center_safe_zone.description": "Pourcentage du centre de l'écran laissé libre pour le sujet principal du fond d'écran.",
   "settings.display_mode.label": "Mode d'affichage des paroles",

@@ -27,6 +27,8 @@
   "settings.offset_y.description": "Sahne konumunu piksel cinsinden ince ayarla.",
   "settings.dynamic_placement.label": "Dinamik konumlandırma",
   "settings.dynamic_placement.description": "Her yeni söz satırında tipografi bloğunu güvenli ekran bölgeleri arasında taşı.",
+  "settings.wallpaper_aware.label": "Duvar kağıdına duyarlı konum",
+  "settings.wallpaper_aware.description": "Duvar kağıdını bir kez analiz eder ve sözleri en sakin bölgesinde tutar; yalnızca duvar kağıdı değişince yeniden hesaplanır.",
   "settings.center_safe_zone.label": "Merkez koruma alanı",
   "settings.center_safe_zone.description": "Duvar kağıdının ana objesi için boş bırakılacak merkez alanının yüzdesi.",
   "settings.display_mode.label": "Söz gösterim modu",

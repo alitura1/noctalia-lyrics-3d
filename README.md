@@ -33,6 +33,7 @@ Translation files are plain flat JSON keyed by the `label_key` / `description_ke
 - **Compact now-playing card (off by default):** 36 px cover, title, artist, live progress bar and elapsed/total time; the card sizes itself between 214 and 320 px. Enable `show_now_playing` to show it — the desktop stays lyric-only out of the box.
 - **Intro and silence handling:** nothing is shown before the first line; gaps longer than 4 seconds hide the lyrics, and the scene fades and scales back in when vocals return.
 - **Dynamic multi-zone placement:** with `dynamic_placement` on, the type block moves smoothly between safe screen zones on every new line, and `center_safe_zone` keeps the wallpaper's main subject visible.
+- **Wallpaper-aware placement:** with `wallpaper_aware` on (default), the wallpaper is sampled once into a coarse energy grid, the calmest region wins and the lyrics stay there instead of cycling over the subject in the middle. The analysis runs once per wallpaper and only repeats when the wallpaper itself changes, so nothing is recomputed while playing. Sampling is a single `magick`/`convert` (or `ffmpeg`) call that writes a 48×27 RGB frame; if none of them is installed the plugin simply keeps the configured position.
 - **Four display modes:** `auto`, `kinetic`, `lineByLine` and `singleFocus`; Auto picks a mode from line length and timing.
 - **Quick card controls:** hover or click the now-playing card to reveal Mode / Layout / Settings buttons.
 - **Wallpaper-aware calibration:** live 3D grid, drag to move, X/Y/Z and scale sliders, saved per wallpaper in `perspectives.json`.
@@ -89,6 +90,7 @@ Every setting is also available through `noctalia msg config-set`; the table lis
 | `offset_x` / `offset_y` | `0` / `0` | Pixel-level nudge on top of the position |
 | `position_preset` / `position_x` / `position_y` | `custom` / `50` / `78` | Alignment preset and percentage position |
 | `dynamic_placement` | `true` | Move the type block across safe zones on each new line |
+| `wallpaper_aware` | `true` | Pick the calmest wallpaper region once per wallpaper and keep the lyrics there |
 | `center_safe_zone` | `32` | Percentage of screen centre kept clear (`0–60`) |
 | `display_mode` | `auto` | `auto`, `kinetic`, `lineByLine` or `singleFocus` |
 | `typography_style` / `typography_max_width` | `modern` / `480` | Poster style and packed block width (`420–520`) |
@@ -220,6 +222,7 @@ Ayar etiketleri ve açıklamaları aşağıdaki tüm dillerde çevrilmiştir. No
 - **Kompakt now playing kartı (varsayılan kapalı):** 36 px kapak, şarkı adı, sanatçı, canlı ilerleme çubuğu ve geçen/toplam süre; içeriğe göre 214–320 px arasında boyutlanır. Göstermek için `show_now_playing` ayarını açın — masaüstü varsayılan olarak yalnızca sözleri gösterir.
 - **İntro ve sessizlik kontrolü:** İlk söz satırından önce hiçbir söz gösterilmez. Satır arasında 4 saniyeden uzun enstrümantal boşluk varsa sözler gizlenir; vokal yeniden girdiğinde sahne fade-in ve ölçek animasyonuyla döner.
 - **Dinamik çoklu bölge:** `dynamic_placement` açıkken her yeni satırda tipografi bloğu üst/sol/sağ/alt güvenli bölgeler arasında yumuşakça taşınır; `center_safe_zone` merkezdeki duvar kağıdı objesini korur. Blok kenardayken hafif yönlü 3D açı alır.
+- **Duvar kağıdına duyarlı konum:** `wallpaper_aware` açıkken (varsayılan) duvar kağıdı bir kez kaba bir enerji ızgarasına örneklenir, en sakin bölge seçilir ve sözler ortadaki objenin üstünden geçmek yerine orada kalır. Analiz duvar kağıdı başına bir kez çalışır, yalnızca duvar kağıdı değişince tekrarlanır. Örnekleme tek bir `magick`/`convert` (veya `ffmpeg`) çağrısıyla 48×27 RGB kare üretir; hiçbiri kurulu değilse eklenti ayarlı konumu kullanmaya devam eder.
 - **Dört gösterim modu:** `auto`, `kinetic`, `lineByLine` ve `singleFocus`; Auto satır uzunluğu ve süresine göre mod seçer.
 - **Hızlı kart kontrolleri:** Now playing kartı fareyle üzerine gelince veya tıklanınca Mod / Yerleşim / Ayarlar düğmelerini açar.
 - **Duvar kağıdına oturan kalibrasyon:** Canlı 3D ızgara, sürükleyerek taşıma, X/Y/Z ve ölçek kaydırıcıları. Kaydedilen perspektif `perspectives.json` içinde duvar kağıdı başına saklanır.
@@ -276,6 +279,7 @@ Tüm ayarlar `noctalia msg config-set` ile de yazılabilir; tablo v2.3.0 varsay�
 | `offset_x` / `offset_y` | `0` / `0` | Konum üzerine piksel ince kaydırma |
 | `position_preset` / `position_x` / `position_y` | `custom` / `50` / `78` | Hizalama ön ayarı ve yüzde konum |
 | `dynamic_placement` | `true` | Her yeni satırda bloğu güvenli bölgeler arasında taşı |
+| `wallpaper_aware` | `true` | Duvar kağıdı başına bir kez en sakin bölgeyi seç ve sözleri orada tut |
 | `center_safe_zone` | `32` | Merkezde boş bırakılan alan yüzdesi (`%0–%60`) |
 | `display_mode` | `auto` | `auto`, `kinetic`, `lineByLine` veya `singleFocus` |
 | `typography_style` / `typography_max_width` | `modern` / `480` | Poster stili ve blok genişliği (`420–520`) |

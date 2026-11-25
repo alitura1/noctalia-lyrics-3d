@@ -27,6 +27,8 @@
   "settings.offset_y.description": "Fine-tune the scene position in pixels.",
   "settings.dynamic_placement.label": "Dynamic placement",
   "settings.dynamic_placement.description": "Move the type block between safe screen zones when each new lyric line starts.",
+  "settings.wallpaper_aware.label": "Wallpaper-aware placement",
+  "settings.wallpaper_aware.description": "Analyse the wallpaper once and keep the lyrics on its calmest area; recomputed only when the wallpaper changes.",
   "settings.center_safe_zone.label": "Center safe zone",
   "settings.center_safe_zone.description": "Percentage of the screen centre kept free for the wallpaper's main subject.",
   "settings.display_mode.label": "Lyrics display mode",

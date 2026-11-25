@@ -40,6 +40,12 @@ Item {
     property bool showNowPlaying: true
     property bool showNextLine: false
     property bool dynamicPlacement: true
+    // Wallpaper-aware placement: when the wallpaper analysis produced an
+    // anchor, it wins over both the fixed position and the corner cycle.
+    property bool wallpaperAware: false
+    property real wallpaperX: 0
+    property real wallpaperY: 0
+    property string wallpaperRegion: ""
     property int centerSafeZone: 32
     property string displayMode: "auto"
     property int placementCycle: -1
@@ -154,22 +160,28 @@ Item {
         root.dynamicRegion = regions[next]
     }
 
-    readonly property real resolvedPositionX: root.dynamicPlacement
-        ? root.regionX(root.dynamicRegion) : root.positionX
-    readonly property real resolvedPositionY: root.dynamicPlacement
-        ? root.regionY(root.dynamicRegion) : root.positionY
+    readonly property bool wallpaperPlaced: root.wallpaperAware
+        && root.wallpaperX > 0 && root.wallpaperY > 0
+    readonly property string activeRegion: root.wallpaperPlaced
+        ? root.wallpaperRegion : root.dynamicRegion
+    readonly property real resolvedPositionX: root.wallpaperPlaced
+        ? root.wallpaperX
+        : (root.dynamicPlacement ? root.regionX(root.dynamicRegion) : root.positionX)
+    readonly property real resolvedPositionY: root.wallpaperPlaced
+        ? root.wallpaperY
+        : (root.dynamicPlacement ? root.regionY(root.dynamicRegion) : root.positionY)
     readonly property real regionalAngleY: {
-        if (!root.dynamicPlacement)
+        if (!root.wallpaperPlaced && !root.dynamicPlacement)
             return 0
-        if (root.dynamicRegion === "topLeft" || root.dynamicRegion === "bottomLeft")
+        if (root.activeRegion === "topLeft" || root.activeRegion === "bottomLeft")
             return 8
-        if (root.dynamicRegion === "topRight" || root.dynamicRegion === "bottomRight")
+        if (root.activeRegion === "topRight" || root.activeRegion === "bottomRight")
             return -8
         return 0
     }
 
     onDynamicPlacementChanged: {
-        if (root.dynamicPlacement)
+        if (root.dynamicPlacement && !root.wallpaperPlaced)
             root.chooseDynamicRegion()
     }
 
@@ -336,7 +348,8 @@ Item {
     clip: false
 
     onActiveIndexChanged: {
-        if (root.dynamicPlacement && root.activeIndex >= 0 && root.stageVisible)
+        if (root.dynamicPlacement && !root.wallpaperPlaced && root.activeIndex >= 0
+                && root.stageVisible)
             root.chooseDynamicRegion()
         if (root.activeIndex > 0 && root.stageVisible) {
             var previous = root.displayLines[root.activeIndex - 1]
@@ -376,7 +389,7 @@ Item {
     }
 
     Component.onCompleted: {
-        if (root.dynamicPlacement)
+        if (root.dynamicPlacement && !root.wallpaperPlaced)
             root.chooseDynamicRegion()
         if (root.stageVisible)
             revealAnimation.restart()

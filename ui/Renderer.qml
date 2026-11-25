@@ -196,6 +196,7 @@ ShellRoot {
         }
     }
 
+
     function themeKey() {
         return theme.wallpaperKey && theme.wallpaperKey.length > 0 ? theme.wallpaperKey : "global"
     }
@@ -459,6 +460,8 @@ ShellRoot {
             screen: modelData
             // Unmapped while hidden: no buffer, no commit, no compositor work.
             visible: root.overlayOnScreen || root.calibratingLocal
+            // A Canvas can only sample the wallpaper while its window is
+            // mapped, so the one-time analysis is requested on first show.
             anchors {
                 top: true
                 bottom: true
@@ -532,6 +535,12 @@ ShellRoot {
                     positionX: root.positionX
                     positionY: root.positionY
                     dynamicPlacement: cfg.dynamicPlacement !== false
+                    wallpaperAware: cfg.wallpaperAware !== false
+                    // The service analyses the wallpaper once per change and
+                    // publishes the calmest spot in state.json.
+                    wallpaperX: Number(root.st.wallpaperX) || 0
+                    wallpaperY: Number(root.st.wallpaperY) || 0
+                    wallpaperRegion: String(root.st.wallpaperRegion || "")
                     centerSafeZone: num(cfg.centerSafeZone, 32)
                     displayMode: String(cfg.displayMode || "auto")
                     showNowPlaying: cfg.showNowPlaying !== false

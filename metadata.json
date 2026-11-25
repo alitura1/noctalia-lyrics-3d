@@ -1,7 +1,7 @@
 {
   "id": "noctalia-lyrics-3d",
   "name": "Noctalia Lyrics 3D",
-  "version": "2.3.2",
+  "version": "2.4.0",
   "description": "Cinematic desktop lyrics for Noctalia Shell with dynamic safe-zone placement, four display modes, packed variable-scale typography, neon glow and an interactive compact now-playing card.",
   "author": "alitura",
   "license": "MIT",
@@ -29,7 +29,8 @@
     "runtime": [
       "curl (LRCLIB / remote album art)",
       "playerctl (source list)",
-      "hyprctl (window visibility rules)"
+      "hyprctl (window visibility rules)",
+      "ImageMagick (magick/convert) or ffmpeg (optional: wallpaper-aware placement)"
     ]
   },
   "entries": {

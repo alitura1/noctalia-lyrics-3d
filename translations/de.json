@@ -27,6 +27,8 @@
   "settings.offset_y.description": "Feinabstimmung der Szenenposition in Pixeln.",
   "settings.dynamic_placement.label": "Dynamische Platzierung",
   "settings.dynamic_placement.description": "Verschiebt den Textblock bei jeder neuen Songtextzeile zwischen sicheren Bildschirmzonen.",
+  "settings.wallpaper_aware.label": "Hintergrundbewusste Platzierung",
+  "settings.wallpaper_aware.description": "Analysiert das Hintergrundbild einmal und hält den Text auf der ruhigsten Fläche; Neuberechnung nur bei einem Hintergrundwechsel.",
   "settings.center_safe_zone.label": "Sichere Mitte",
   "settings.center_safe_zone.description": "Anteil der Bildschirmmitte, der für das Hauptmotiv des Hintergrundbilds frei bleibt.",
   "settings.display_mode.label": "Songtext-Anzeigemodus",

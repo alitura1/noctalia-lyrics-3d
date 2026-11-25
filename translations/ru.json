@@ -27,6 +27,8 @@
   "settings.offset_y.description": "Точная настройка положения сцены в пикселях.",
   "settings.dynamic_placement.label": "Динамическое размещение",
   "settings.dynamic_placement.description": "Переносит текстовый блок между безопасными зонами экрана при начале каждой новой строки.",
+  "settings.wallpaper_aware.label": "Размещение по обоям",
+  "settings.wallpaper_aware.description": "Обои анализируются один раз, текст остаётся в самой спокойной области; пересчёт только при смене обоев.",
   "settings.center_safe_zone.label": "Безопасная зона в центре",
   "settings.center_safe_zone.description": "Процент центра экрана, остающийся свободным для главного объекта обоев.",
   "settings.display_mode.label": "Режим отображения текста",

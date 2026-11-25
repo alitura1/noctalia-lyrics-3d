@@ -139,6 +139,7 @@ local function readSettings()
         positionX = positionX,
         positionY = positionY,
         dynamicPlacement = boolOr(cfg("dynamic_placement", true), true),
+        wallpaperAware = boolOr(cfg("wallpaper_aware", true), true),
         centerSafeZone = numberOr(cfg("center_safe_zone", 32), 32),
         displayMode = tostring(cfg("display_mode", "auto") or "auto"),
         showNowPlaying = boolOr(cfg("show_now_playing", true), true),
@@ -212,6 +213,29 @@ local function jsonDecode(raw)
     return nil
 end
 
+-- ── wallpaper-aware placement ──────────────────────────────────────────────
+-- Analysed once whenever the wallpaper changes: a tool scales it to a 48x27
+-- RGB grid, the calmest candidate spot wins, and the result is published in
+-- state.json. Nothing runs while music plays.
+
+local PLACEMENT_RAW = CACHE .. "/placement.rgb"
+local PLACEMENT_COLS, PLACEMENT_ROWS = 48, 27
+local PLACEMENT_CANDIDATES = {
+    { region = "topLeft", x = 26, y = 24 },
+    { region = "topCenter", x = 50, y = 22 },
+    { region = "topRight", x = 74, y = 24 },
+    { region = "bottomLeft", x = 26, y = 76 },
+    { region = "bottomCenter", x = 50, y = 78 },
+    { region = "bottomRight", x = 74, y = 76 },
+}
+
+local placementPath = ""
+local placementCheckedAtMs = 0
+local placementBusy = false
+local placementTool = ""
+local placementToolResolved = false
+local placementX, placementY, placementRegion = 0, 0, ""
+
 local function writeState()
     local payload = {
         version = 2,
@@ -250,10 +274,138 @@ local function writeState()
         cursorY = cursorY,
         screenWidth = screenWidth,
         screenHeight = screenHeight,
+        wallpaperX = placementX,
+        wallpaperY = placementY,
+        wallpaperRegion = placementRegion,
         settings = S,
     }
     local raw = jsonEncode(payload)
     if raw ~= nil then noctalia.writeFile(STATE_PATH, raw) end
+end
+
+local function placementToolName()
+    if placementToolResolved then
+        if placementTool == "" then return nil end
+        return placementTool
+    end
+    placementToolResolved = true
+    if noctalia.commandExists("magick") then
+        placementTool = "magick"
+    elseif noctalia.commandExists("convert") then
+        placementTool = "convert"
+    elseif noctalia.commandExists("ffmpeg") then
+        placementTool = "ffmpeg"
+    else
+        placementTool = ""
+        log("wallpaper placement skipped: neither ImageMagick nor ffmpeg is installed")
+    end
+    if placementTool == "" then return nil end
+    return placementTool
+end
+
+local function pathInSection(text, header)
+    local start = text:find(header, 1, true)
+    if start == nil then return "" end
+    local bodyStart = start + #header
+    local nextHeader = text:find("\n[", bodyStart, true)
+    local body = text:sub(bodyStart, (nextHeader or #text) - 1)
+    return body:match('path%s*=%s*"([^"]*)"') or ""
+end
+
+local function currentWallpaperPath()
+    if focusedMonitor ~= "" and type(noctalia.wallpaperPath) == "function" then
+        local ok, path = pcall(noctalia.wallpaperPath, focusedMonitor)
+        if ok and type(path) == "string" and path ~= "" then return path end
+    end
+    local raw = noctalia.readFile(noctalia.expandPath("~/.local/state/noctalia/settings.toml"))
+    if raw == nil then return "" end
+    local path = ""
+    if focusedMonitor ~= "" then
+        path = pathInSection(raw, "[wallpaper.monitors." .. focusedMonitor .. "]")
+    end
+    if path == "" then path = pathInSection(raw, "[wallpaper.default]") end
+    if path == "" then path = pathInSection(raw, "[wallpaper.last]") end
+    if path == "" then return "" end
+    return noctalia.expandPath(path)
+end
+
+local function applyPlacement(raw, path)
+    local cols, rows = PLACEMENT_COLS, PLACEMENT_ROWS
+    local lum = {}
+    for i = 0, cols * rows - 1 do
+        local b = i * 3 + 1
+        lum[i] = 0.2126 * string.byte(raw, b) + 0.7152 * string.byte(raw, b + 1)
+            + 0.0722 * string.byte(raw, b + 2)
+    end
+    local energy = {}
+    for y = 0, rows - 1 do
+        for x = 0, cols - 1 do
+            local i = y * cols + x
+            local dx = 0
+            local dy = 0
+            if x > 0 then dx = math.abs(lum[i] - lum[i - 1]) end
+            if y > 0 then dy = math.abs(lum[i] - lum[i - cols]) end
+            energy[i] = dx + dy
+        end
+    end
+    local best, bestScore = nil, math.huge
+    for _, candidate in ipairs(PLACEMENT_CANDIDATES) do
+        local left = math.max(0, math.floor((candidate.x - 27) / 100 * cols))
+        local right = math.min(cols - 1, math.ceil((candidate.x + 27) / 100 * cols) - 1)
+        local top = math.max(0, math.floor((candidate.y - 9) / 100 * rows))
+        local bottom = math.min(rows - 1, math.ceil((candidate.y + 9) / 100 * rows) - 1)
+        local score = 0
+        for y = top, bottom do
+            for x = left, right do score = score + energy[y * cols + x] end
+        end
+        -- Tie-break towards the lower half, where lyrics read naturally.
+        score = score + 0.2 * math.abs(candidate.y - 70)
+        if score < bestScore then
+            best, bestScore = candidate, score
+        end
+    end
+    placementPath = path
+    if best == nil then return end
+    placementX, placementY, placementRegion = best.x, best.y, best.region
+    log(string.format("wallpaper placement: %s at %d%%/%d%% (score %d)",
+        best.region, best.x, best.y, math.floor(bestScore)))
+    writeState()
+end
+
+local function analyzeWallpaper(path)
+    local tool = placementToolName()
+    if tool == nil then return end
+    placementBusy = true
+    local argv
+    if tool == "ffmpeg" then
+        argv = { "ffmpeg", "-v", "error", "-y", "-i", path, "-vf", "scale=48:27",
+            "-pix_fmt", "rgb24", "-f", "rawvideo", PLACEMENT_RAW }
+    else
+        argv = { tool, path, "-resize", "48x27!", "-depth", "8", "rgb:" .. PLACEMENT_RAW }
+    end
+    noctalia.runAsync(argv, function(result)
+        placementBusy = false
+        local raw = nil
+        if result.exitCode == 0 then raw = noctalia.readFile(PLACEMENT_RAW) end
+        if raw == nil or #raw < PLACEMENT_COLS * PLACEMENT_ROWS * 3 then
+            placementPath = path
+            log("wallpaper analysis failed for " .. path .. " (exit " .. tostring(result.exitCode)
+                .. ": " .. tostring(result.stderr) .. ")")
+            return
+        end
+        applyPlacement(raw, path)
+    end)
+end
+
+local function maybeAnalyzeWallpaper()
+    if not S.wallpaperAware then return end
+    local now = noctalia.nowMs()
+    if placementBusy or now - placementCheckedAtMs < 4000 then return end
+    placementCheckedAtMs = now
+    local path = currentWallpaperPath()
+    if path == "" or path == placementPath then return end
+    if not noctalia.fileExists(path) then return end
+    analyzeWallpaper(path)
 end
 
 local function setLyricsIdle()
@@ -1063,6 +1215,7 @@ function update()
     end
     refreshMedia()
     if tick == 1 or tick % 2 == 0 then pollHypr() end
+    if tick % 4 == 0 then maybeAnalyzeWallpaper() end
     writeState()
 end
 
@@ -1108,5 +1261,6 @@ end
 noctalia.writeFile(CONTROL_PATH, "{}")
 refreshMedia()
 pollHypr()
+maybeAnalyzeWallpaper()
 writeState()
 publishPanel()

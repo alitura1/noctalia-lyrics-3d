@@ -27,6 +27,8 @@
   "settings.offset_y.description": "Ajusta com precisão a posição da cena em pixels.",
   "settings.dynamic_placement.label": "Posicionamento dinâmico",
   "settings.dynamic_placement.description": "Move o bloco tipográfico entre zonas seguras da tela a cada nova linha de letra.",
+  "settings.wallpaper_aware.label": "Posicionamento conforme o fundo",
+  "settings.wallpaper_aware.description": "Analisa o fundo uma vez e mantém a letra na sua área mais calma; recalculado apenas quando o fundo muda.",
   "settings.center_safe_zone.label": "Zona segura central",
   "settings.center_safe_zone.description": "Porcentagem do centro da tela mantida livre para o assunto principal do papel de parede.",
   "settings.display_mode.label": "Modo de exibição das letras",
