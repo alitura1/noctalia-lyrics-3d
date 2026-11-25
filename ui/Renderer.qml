@@ -80,13 +80,19 @@ ShellRoot {
         return Math.max(-2, Math.min(2, normalized * 2 * strength))
     }
 
+    // The overlay only exists while it can actually be seen. A mapped
+    // full-screen layer surface costs a compositor blend and a QML frame every
+    // 16 ms even when a fullscreen game covers it, so the surface is unmapped
+    // and the clock stops whenever nothing is drawn.
+    readonly property bool overlayOnScreen: root.st.visible === true && !root.pauseDismissed
+
     // 60 Hz local clock. The service only publishes anchors (track change,
     // play/pause, seek, 2 s drift sync), so the playhead advances every frame
     // from the local monotonic clock instead of stepping on D-Bus polls.
     Timer {
         interval: 16
         repeat: true
-        running: root.playing && !root.calibratingLocal
+        running: root.playing && !root.calibratingLocal && root.overlayOnScreen
         onTriggered: {
             var rate = Number(root.st.positionRate) || Number(root.st.rate) || 1
             var next = root.anchorPositionMs + (Date.now() - root.anchorWallMs) * rate
@@ -451,6 +457,8 @@ ShellRoot {
                     && lyricRenderer.nowPlayingInteractive
 
             screen: modelData
+            // Unmapped while hidden: no buffer, no commit, no compositor work.
+            visible: root.overlayOnScreen || root.calibratingLocal
             anchors {
                 top: true
                 bottom: true

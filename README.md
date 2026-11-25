@@ -128,6 +128,8 @@ Saved perspectives are applied automatically when the wallpaper changes.
 
 `hide_on_fullscreen` and `hide_on_pause` add further conditions; `monitor_scope` limits drawing to the focused output or all outputs. `hide_on_pause` waits 1.5 s, then fades the overlay out over 300 ms and restores it in 180 ms as soon as playback resumes.
 
+While the overlay is not shown, the renderer unmaps its layer surface and stops its 16 ms playhead clock. A hidden overlay therefore holds no full-screen surface and costs no compositor or GPU work, which keeps the frame rate intact while a fullscreen game or another window is in front.
+
 ### Source and domain filter
 
 `filter_mode = allowAll` accepts every MPRIS source; `whitelist` only accepts built-in media domains (YouTube, Spotify, SoundCloud, Bandcamp, Deezer, Tidal, Apple Music, NetEase, QQ Music, Bilibili) plus `custom_domains`. `disabled_domains` always blocks. Browsers that do not publish `xesam:url` are hidden in whitelist mode.
@@ -312,6 +314,8 @@ Duvar kağıdı değiştiğinde kayıtlı perspektif otomatik uygulanır.
 | `always` | `overlay` | Her zaman |
 
 `hide_on_fullscreen` ve `hide_on_pause` ek koşullar ekler; `monitor_scope` yalnızca odaklı çıkışta veya tüm çıkışlarda çizer. `hide_on_pause` 1,5 s bekler, katmanı 300 ms’de soldurur ve oynatma dönünce 180 ms’de geri getirir.
+
+Katman görünmediği sürece renderer yüzeyini hiç map etmez ve 16 ms’lik playhead saatini durdurur. Gizli katman tam ekran bir yüzey tutmadığı için compositor ve GPU işi çıkarmaz; tam ekran oyun ya da başka bir pencere öndeyken kare hızı bozulmaz.
 
 ### Kaynak ve alan adı filtresi
 
