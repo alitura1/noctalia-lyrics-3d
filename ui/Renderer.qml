@@ -537,10 +537,8 @@ ShellRoot {
                     dynamicPlacement: cfg.dynamicPlacement !== false
                     wallpaperAware: cfg.wallpaperAware !== false
                     // The service analyses the wallpaper once per change and
-                    // publishes the calmest spot in state.json.
-                    wallpaperX: Number(root.st.wallpaperX) || 0
-                    wallpaperY: Number(root.st.wallpaperY) || 0
-                    wallpaperRegion: String(root.st.wallpaperRegion || "")
+                    // publishes its energy grid; the renderer roams the calm cells.
+                    wallpaperGrid: root.st.wallpaperGrid || null
                     centerSafeZone: num(cfg.centerSafeZone, 32)
                     displayMode: String(cfg.displayMode || "auto")
                     showNowPlaying: cfg.showNowPlaying !== false

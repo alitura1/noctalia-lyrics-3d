@@ -40,12 +40,11 @@ Item {
     property bool showNowPlaying: true
     property bool showNextLine: false
     property bool dynamicPlacement: true
-    // Wallpaper-aware placement: when the wallpaper analysis produced an
-    // anchor, it wins over both the fixed position and the corner cycle.
+    // Wallpaper-aware placement: the service publishes a coarse energy grid of
+    // the wallpaper, so the block can roam every calm area while skipping the
+    // busy subject in the middle.
     property bool wallpaperAware: false
-    property real wallpaperX: 0
-    property real wallpaperY: 0
-    property string wallpaperRegion: ""
+    property var wallpaperGrid: null
     property int centerSafeZone: 32
     property string displayMode: "auto"
     property int placementCycle: -1
@@ -154,21 +153,157 @@ Item {
     }
 
     function chooseDynamicRegion() {
+        if (root.wallpaperPlaced) {
+            root.chooseWallpaperSpot()
+            return
+        }
         var regions = root.dynamicRegions
         var next = (root.placementCycle + 1) % regions.length
         root.placementCycle = next
         root.dynamicRegion = regions[next]
     }
 
-    readonly property bool wallpaperPlaced: root.wallpaperAware
-        && root.wallpaperX > 0 && root.wallpaperY > 0
+    // ---------------------------------------------- wallpaper energy grid
+    property real spotX: 50
+    property real spotY: 78
+
+    readonly property int gridCols: Number(root.wallpaperGrid ? root.wallpaperGrid.cols : 0)
+    readonly property int gridRows: Number(root.wallpaperGrid ? root.wallpaperGrid.rows : 0)
+    readonly property string gridData: String(root.wallpaperGrid
+        ? (root.wallpaperGrid.data || "") : "")
+    readonly property bool wallpaperPlaced: root.wallpaperAware && root.gridCols > 0
+        && root.gridRows > 0 && root.gridData.length >= root.gridCols * root.gridRows
+
+    function cellEnergy(cx, cy) {
+        if (cx < 0 || cy < 0 || cx >= root.gridCols || cy >= root.gridRows)
+            return 0
+        var code = root.gridData.charCodeAt(cy * root.gridCols + cx)
+        if (isNaN(code))
+            return 0
+        return code <= 57 ? code - 48 : code - 87
+    }
+
+    // Average busy-ness under the real type block, so a narrow line may sit
+    // closer to the subject than a wide one.
+    function spotScore(xPct, yPct) {
+        var hw = Math.max(4, root.blockHalfWidthPercent)
+        var hh = Math.max(4, root.blockHalfHeightPercent)
+        var left = Math.round((xPct - hw) / 100 * root.gridCols)
+        var right = Math.round((xPct + hw) / 100 * root.gridCols)
+        var top = Math.round((yPct - hh) / 100 * root.gridRows)
+        var bottom = Math.round((yPct + hh) / 100 * root.gridRows)
+        var sum = 0
+        var cells = 0
+        for (var cy = Math.max(0, top); cy <= Math.min(root.gridRows - 1, bottom); cy++) {
+            for (var cx = Math.max(0, left); cx <= Math.min(root.gridCols - 1, right); cx++) {
+                sum += root.cellEnergy(cx, cy)
+                cells++
+            }
+        }
+        return cells > 0 ? sum / cells : 0
+    }
+
+    // A tour of the calm spots, ordered by nearest neighbour so the block walks
+    // through the empty area instead of hopping corner to corner.
+    property var wallpaperTour: []
+    property int wallpaperTourIndex: 0
+    property real tourHalfWidth: -1
+
+    function buildWallpaperTour() {
+        var hw = Math.max(4, root.blockHalfWidthPercent)
+        var hh = Math.max(4, root.blockHalfHeightPercent)
+        // Keep the whole block on screen, margins included.
+        var xMin = Math.min(hw + 3, 50)
+        var xMax = Math.max(97 - hw, 50)
+        var yMin = Math.min(hh + 4, 50)
+        var yMax = Math.max(96 - hh, 50)
+        var spots = []
+        var best = Infinity
+        for (var xi = 0; xi <= 6; xi++) {
+            var xPct = xMin + (xMax - xMin) * xi / 6
+            for (var yi = 0; yi <= 6; yi++) {
+                var yPct = yMin + (yMax - yMin) * yi / 6
+                var score = root.spotScore(xPct, yPct)
+                spots.push({ x: Math.round(xPct), y: Math.round(yPct), score: score })
+                if (score < best)
+                    best = score
+            }
+        }
+        var limit = Math.max(best * 1.6, best + 0.8)
+        var allowed = spots.filter(function (spot) { return spot.score <= limit })
+        if (allowed.length < 4) {
+            allowed = spots.slice().sort(function (a, b) { return a.score - b.score })
+                .slice(0, 4)
+        }
+        var tour = []
+        var cursorX = root.spotX
+        var cursorY = root.spotY
+        var pool = allowed.slice()
+        while (pool.length > 0) {
+            var bestIndex = 0
+            var bestDistance = Infinity
+            for (var i = 0; i < pool.length; i++) {
+                var distance = Math.abs(pool[i].x - cursorX)
+                    + Math.abs(pool[i].y - cursorY)
+                if (distance < bestDistance) {
+                    bestDistance = distance
+                    bestIndex = i
+                }
+            }
+            cursorX = pool[bestIndex].x
+            cursorY = pool[bestIndex].y
+            tour.push(pool.splice(bestIndex, 1)[0])
+        }
+        root.wallpaperTour = tour
+        root.wallpaperTourIndex = 0
+        root.tourHalfWidth = hw
+    }
+
+    function ensureWallpaperTour() {
+        if (!root.wallpaperPlaced)
+            return
+        if (root.wallpaperTour.length > 0
+                && Math.abs(root.tourHalfWidth - root.blockHalfWidthPercent) < 3)
+            return
+        root.buildWallpaperTour()
+    }
+
+    function chooseWallpaperSpot() {
+        root.ensureWallpaperTour()
+        if (root.wallpaperTour.length === 0)
+            return
+        // Two or three steps per line, so the drift is visible within a verse
+        // instead of crawling one cell at a time.
+        var step = 2 + Math.floor(Math.random() * 2)
+        root.wallpaperTourIndex = (root.wallpaperTourIndex + step) % root.wallpaperTour.length
+        var spot = root.wallpaperTour[root.wallpaperTourIndex]
+        root.spotX = spot.x
+        root.spotY = spot.y
+        console.log("[placement] spot " + spot.x + "%/" + spot.y + "% of "
+            + root.wallpaperTour.length + " calm spots")
+    }
+
+    onWallpaperPlacedChanged: {
+        if (root.wallpaperPlaced) {
+            root.buildWallpaperTour()
+            root.chooseWallpaperSpot()
+        } else {
+            root.wallpaperTour = []
+            root.wallpaperTourIndex = 0
+            root.tourHalfWidth = -1
+        }
+    }
+
     readonly property string activeRegion: root.wallpaperPlaced
-        ? root.wallpaperRegion : root.dynamicRegion
+        ? (root.spotX < 45 ? (root.spotY < 50 ? "topLeft" : "bottomLeft")
+            : (root.spotX > 55 ? (root.spotY < 50 ? "topRight" : "bottomRight")
+                : (root.spotY < 50 ? "topCenter" : "bottomCenter")))
+        : root.dynamicRegion
     readonly property real resolvedPositionX: root.wallpaperPlaced
-        ? root.wallpaperX
+        ? root.spotX
         : (root.dynamicPlacement ? root.regionX(root.dynamicRegion) : root.positionX)
     readonly property real resolvedPositionY: root.wallpaperPlaced
-        ? root.wallpaperY
+        ? root.spotY
         : (root.dynamicPlacement ? root.regionY(root.dynamicRegion) : root.positionY)
     readonly property real regionalAngleY: {
         if (!root.wallpaperPlaced && !root.dynamicPlacement)
@@ -181,7 +316,9 @@ Item {
     }
 
     onDynamicPlacementChanged: {
-        if (root.dynamicPlacement && !root.wallpaperPlaced)
+        if (root.dynamicPlacement && root.wallpaperPlaced)
+            root.chooseWallpaperSpot()
+        else if (root.dynamicPlacement)
             root.chooseDynamicRegion()
     }
 
@@ -348,8 +485,7 @@ Item {
     clip: false
 
     onActiveIndexChanged: {
-        if (root.dynamicPlacement && !root.wallpaperPlaced && root.activeIndex >= 0
-                && root.stageVisible)
+        if (root.dynamicPlacement && root.activeIndex >= 0 && root.stageVisible)
             root.chooseDynamicRegion()
         if (root.activeIndex > 0 && root.stageVisible) {
             var previous = root.displayLines[root.activeIndex - 1]
@@ -389,7 +525,7 @@ Item {
     }
 
     Component.onCompleted: {
-        if (root.dynamicPlacement && !root.wallpaperPlaced)
+        if (root.dynamicPlacement)
             root.chooseDynamicRegion()
         if (root.stageVisible)
             revealAnimation.restart()

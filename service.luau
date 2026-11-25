@@ -220,21 +220,15 @@ end
 
 local PLACEMENT_RAW = CACHE .. "/placement.rgb"
 local PLACEMENT_COLS, PLACEMENT_ROWS = 48, 27
-local PLACEMENT_CANDIDATES = {
-    { region = "topLeft", x = 26, y = 24 },
-    { region = "topCenter", x = 50, y = 22 },
-    { region = "topRight", x = 74, y = 24 },
-    { region = "bottomLeft", x = 26, y = 76 },
-    { region = "bottomCenter", x = 50, y = 78 },
-    { region = "bottomRight", x = 74, y = 76 },
-}
+local GRID_COLS, GRID_ROWS = 24, 14
 
 local placementPath = ""
 local placementCheckedAtMs = 0
 local placementBusy = false
 local placementTool = ""
 local placementToolResolved = false
-local placementX, placementY, placementRegion = 0, 0, ""
+-- { cols, rows, data } where data holds one hex nibble of busy-ness per cell.
+local placementGrid = nil
 
 local function writeState()
     local payload = {
@@ -274,9 +268,7 @@ local function writeState()
         cursorY = cursorY,
         screenWidth = screenWidth,
         screenHeight = screenHeight,
-        wallpaperX = placementX,
-        wallpaperY = placementY,
-        wallpaperRegion = placementRegion,
+        wallpaperGrid = placementGrid,
         settings = S,
     }
     local raw = jsonEncode(payload)
@@ -348,27 +340,28 @@ local function applyPlacement(raw, path)
             energy[i] = dx + dy
         end
     end
-    local best, bestScore = nil, math.huge
-    for _, candidate in ipairs(PLACEMENT_CANDIDATES) do
-        local left = math.max(0, math.floor((candidate.x - 27) / 100 * cols))
-        local right = math.min(cols - 1, math.ceil((candidate.x + 27) / 100 * cols) - 1)
-        local top = math.max(0, math.floor((candidate.y - 9) / 100 * rows))
-        local bottom = math.min(rows - 1, math.ceil((candidate.y + 9) / 100 * rows) - 1)
-        local score = 0
-        for y = top, bottom do
-            for x = left, right do score = score + energy[y * cols + x] end
-        end
-        -- Tie-break towards the lower half, where lyrics read naturally.
-        score = score + 0.2 * math.abs(candidate.y - 70)
-        if score < bestScore then
-            best, bestScore = candidate, score
+    -- Publish a coarse hex grid instead of one fixed spot: the renderer scores
+    -- candidate positions with the real type-block size and roams the calm ones.
+    local nibbles = {}
+    for gy = 0, GRID_ROWS - 1 do
+        for gx = 0, GRID_COLS - 1 do
+            local top = math.floor(gy * rows / GRID_ROWS)
+            local bottom = math.max(top, math.floor((gy + 1) * rows / GRID_ROWS) - 1)
+            local left = math.floor(gx * cols / GRID_COLS)
+            local right = math.max(left, math.floor((gx + 1) * cols / GRID_COLS) - 1)
+            local peak = 0
+            for y = top, bottom do
+                for x = left, right do
+                    local value = energy[y * cols + x]
+                    if value > peak then peak = value end
+                end
+            end
+            nibbles[#nibbles + 1] = string.format("%x", math.min(15, math.floor(peak / 8)))
         end
     end
     placementPath = path
-    if best == nil then return end
-    placementX, placementY, placementRegion = best.x, best.y, best.region
-    log(string.format("wallpaper placement: %s at %d%%/%d%% (score %d)",
-        best.region, best.x, best.y, math.floor(bestScore)))
+    placementGrid = { cols = GRID_COLS, rows = GRID_ROWS, data = table.concat(nibbles) }
+    log("wallpaper energy grid ready for " .. path)
     writeState()
 end
 
