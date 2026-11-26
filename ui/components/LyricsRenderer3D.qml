@@ -19,6 +19,9 @@ Item {
     property string songArtist: ""
     property string artUrl: ""
     property bool previewMode: false
+    // Terminal states are shown as a timed toast by the host, so the card can
+    // disappear without leaving a static surface mapped for the whole song.
+    property bool statusCardAllowed: true
 
     signal modeToggleRequested()
     signal calibrateRequested()
@@ -226,6 +229,7 @@ Item {
     property var wallpaperTour: []
     property int wallpaperTourIndex: 0
     property real tourHalfWidth: -1
+    property real tourHalfHeight: -1
 
     function buildWallpaperTour() {
         var hw = Math.max(4, root.spotHalfWidth())
@@ -276,18 +280,24 @@ Item {
         root.wallpaperTour = tour
         root.wallpaperTourIndex = 0
         root.tourHalfWidth = hw
+        root.tourHalfHeight = hh
     }
 
     function ensureWallpaperTour() {
         if (!root.wallpaperPlaced)
             return
+        // The tour depends on the real surface size, so an unmapped surface
+        // (height 1 px before the layer is laid out) must not lock it in.
         if (root.wallpaperTour.length > 0
-                && Math.abs(root.tourHalfWidth - root.spotHalfWidth()) < 3)
+                && Math.abs(root.tourHalfWidth - root.spotHalfWidth()) < 3
+                && Math.abs(root.tourHalfHeight - root.spotHalfHeight()) < 3)
             return
         root.buildWallpaperTour()
     }
 
     function chooseWallpaperSpot() {
+        if (root.width < 2 || root.height < 2)
+            return
         root.ensureWallpaperTour()
         if (root.wallpaperTour.length === 0)
             return
@@ -327,6 +337,7 @@ Item {
             root.wallpaperTour = []
             root.wallpaperTourIndex = 0
             root.tourHalfWidth = -1
+            root.tourHalfHeight = -1
         }
     }
 
@@ -872,7 +883,8 @@ Item {
             // Status card for loading / notfound / instrumental / error.
             Rectangle {
                 id: card
-                visible: root.showCard
+                visible: opacity > 0.01
+                opacity: root.showCard && root.statusCardAllowed ? 1 : 0
                 anchors.centerIn: parent
                 width: Math.min(scene.width * 0.82, 620)
                 height: cardColumn.implicitHeight + 34
@@ -880,6 +892,10 @@ Item {
                 color: Qt.rgba(0.03, 0.05, 0.08, 0.52)
                 border.width: 1
                 border.color: Qt.rgba(1, 1, 1, 0.14)
+
+                Behavior on opacity {
+                    NumberAnimation { duration: 260; easing.type: Easing.OutCubic }
+                }
 
                 Column {
                     id: cardColumn

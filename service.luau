@@ -68,6 +68,15 @@ local function trim(value)
     return (tostring(value or ""):gsub("^%s+", ""):gsub("%s+$", ""))
 end
 
+-- Cheap "is there anything but whitespace?" probe for payload-sized text.
+-- trim() runs two gsub passes, so calling it on an HTTP body or on stored
+-- lyrics burns most of the 25 ms callback budget before the real work starts.
+-- find("%S") stops at the first printable byte, which is the common case.
+local function hasText(value)
+    if type(value) ~= "string" or value == "" then return false end
+    return value:find("%S") ~= nil
+end
+
 local function lower(value)
     return trim(value):lower()
 end
@@ -208,7 +217,7 @@ local function jsonEncode(value)
 end
 
 local function jsonDecode(raw)
-    if type(raw) ~= "string" or trim(raw) == "" then return nil end
+    if not hasText(raw) then return nil end
     local ok, value = pcall(function() return noctalia.json.decode(raw) end)
     if ok then return value end
     return nil
@@ -524,7 +533,7 @@ local function readCache(artist, title)
     local entry = index[key]
     local path = entry and entry.file or cachePath(artist, title)
     local raw = noctalia.readFile(path)
-    if raw == nil or trim(raw) == "" then return nil end
+    if not hasText(raw) then return nil end
     if entry == nil then
         index[key] = { file = path, at = noctalia.nowMs() }
         saveCacheIndex()
@@ -556,7 +565,7 @@ local function applyLyrics(synced, plain, provider, instrumental)
     plainText = ""
     lyricsProvider = provider or "LRCLIB"
     lyricsError = ""
-    if trim(synced) ~= "" then
+    if hasText(synced) then
         local ok, parsed = pcall(parseLrc, synced)
         if ok and type(parsed) == "table" and #parsed > 0 then
             lyrics = parsed
@@ -565,9 +574,11 @@ local function applyLyrics(synced, plain, provider, instrumental)
             return true
         end
     end
-    if trim(plain) ~= "" and S.showPlainLyrics then
+    if hasText(plain) and S.showPlainLyrics then
         lyricsState = "plain"
-        plainText = trim(plain)
+        -- Displayed as a block, so leading/trailing whitespace is harmless and
+        -- trimming a long plain-lyrics body is not worth a budget overrun.
+        plainText = plain
         writeCache(song.artist, song.title, "", plain, provider, false)
         return true
     end
@@ -601,8 +612,8 @@ local function fetchLyrics()
     local cached = readCache(artist, title)
     if cached ~= nil then
         lyricsLatencyMs = 0
-        local synced = trim(cached.syncedLyrics or "")
-        local plain = trim(cached.plainLyrics or "")
+        local synced = tostring(cached.syncedLyrics or "")
+        local plain = tostring(cached.plainLyrics or "")
         if synced ~= "" or (plain ~= "" and S.showPlainLyrics) or cached.instrumental == true then
             applyLyrics(synced, plain, cached.provider or "cache", cached.instrumental == true)
             if lyricsState ~= "notfound" then return end
@@ -678,7 +689,7 @@ local function fetchLyrics()
                 if delta <= 2 then score = score + 3
                 elseif delta <= 8 then score = score + 1 end
             end
-            if trim(candidate.syncedLyrics or "") ~= "" then score = score + 2 end
+            if hasText(candidate.syncedLyrics) then score = score + 2 end
             if candidate.instrumental == true then score = score - 1 end
             if score > bestScore then best, bestScore = candidate, score end
         end
