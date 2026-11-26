@@ -80,11 +80,50 @@ ShellRoot {
         return Math.max(-2, Math.min(2, normalized * 2 * strength))
     }
 
+    // Terminal lyric states (notfound / instrumental / error) are a short
+    // toast, not a permanent card: a static card would otherwise keep a full-screen
+    // layer mapped and the 60 Hz clock running for the whole song. The toast
+    // expires and the surface unmaps until there is something new to draw.
+    readonly property bool lyricsReady: (root.lyricsState === "synced" && root.lines.length > 0)
+        || (root.lyricsState === "plain" && String(root.st.plainText || "").length > 0)
+    readonly property bool statusCardTerminal: root.lyricsState === "notfound"
+        || root.lyricsState === "instrumental" || root.lyricsState === "error"
+    readonly property bool nowPlayingCardVisible: root.cfg.showNowPlaying !== false
+        && String(root.st.title || "").length > 0
+    property bool statusToastVisible: false
+    readonly property string statusToastKey: root.lyricsState + "|"
+        + String(root.st.title || "") + "|" + String(root.st.artist || "")
+
+    Timer {
+        id: statusToastTimer
+        interval: 4500
+        repeat: false
+        onTriggered: root.statusToastVisible = false
+    }
+
+    function refreshStatusToast() {
+        if (!root.statusCardTerminal) {
+            statusToastTimer.stop()
+            root.statusToastVisible = false
+            return
+        }
+        root.statusToastVisible = true
+        statusToastTimer.restart()
+    }
+
+    onStatusToastKeyChanged: root.refreshStatusToast()
+
+    readonly property bool statusCardVisible: root.lyricsState === "loading"
+        || (root.statusCardTerminal && root.statusToastVisible)
+    readonly property bool hasOverlayContent: root.calibrating || root.lyricsReady
+        || root.statusCardVisible || root.nowPlayingCardVisible
+
     // The overlay only exists while it can actually be seen. A mapped
     // full-screen layer surface costs a compositor blend and a QML frame every
     // 16 ms even when a fullscreen game covers it, so the surface is unmapped
     // and the clock stops whenever nothing is drawn.
-    readonly property bool overlayOnScreen: root.st.visible === true && !root.pauseDismissed
+    readonly property bool overlayOnScreen: root.st.visible === true
+        && !root.pauseDismissed && root.hasOverlayContent
 
     // 60 Hz local clock. The service only publishes anchors (track change,
     // play/pause, seek, 2 s drift sync), so the playhead advances every frame
@@ -514,6 +553,7 @@ ShellRoot {
                     lyricState: root.calibratingLocal && root.st.hasSong !== true
                         ? "synced" : root.lyricsState
                     previewMode: root.calibratingLocal && root.st.hasSong !== true
+                    statusCardAllowed: root.statusCardVisible
                     positionMs: root.livePositionMs
                     syncOffset: num(cfg.syncOffset, 0)
                     songLengthMs: Number(root.st.lengthMs) || 0

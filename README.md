@@ -133,6 +133,8 @@ Saved perspectives are applied automatically when the wallpaper changes.
 
 While the overlay is not shown, the renderer unmaps its layer surface and stops its 16 ms playhead clock. A hidden overlay therefore holds no full-screen surface and costs no compositor or GPU work, which keeps the frame rate intact while a fullscreen game or another window is in front.
 
+Status cards follow the same rule. *Loading* stays up while LRCLIB is queried, but **Söz bulunamadı / Enstrümantal parça / LRCLIB hatası** is a 4.5 s toast: it fades out, then the surface unmaps instead of holding a static full-screen card (and its playhead clock) for the whole song. The toast reappears when the track changes.
+
 ### Source and domain filter
 
 `filter_mode = allowAll` accepts every MPRIS source; `whitelist` only accepts built-in media domains (YouTube, Spotify, SoundCloud, Bandcamp, Deezer, Tidal, Apple Music, NetEase, QQ Music, Bilibili) plus `custom_domains`. `disabled_domains` always blocks. Browsers that do not publish `xesam:url` are hidden in whitelist mode.
